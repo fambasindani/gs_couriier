@@ -65,6 +65,59 @@ class AuthController extends Controller
     }
 
     /**
+     * Mise à jour de son propre profil (nom, email).
+     */
+    public function updateProfile(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            $validated = $request->validate([
+                'name' => 'sometimes|string|max:150',
+                'email' => 'sometimes|email|max:150|unique:users,email,' . $user->id,
+            ]);
+
+            $user->update($validated);
+
+            return $this->success($user->load('roles.permissions'), 'Profil mis à jour');
+        } catch (ValidationException $e) {
+            return $this->error('Erreur de validation', $e->errors(), 422);
+        } catch (\Throwable $e) {
+            return $this->error('Erreur lors de la mise à jour', $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Modification de son propre mot de passe.
+     */
+    public function updatePassword(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            $validated = $request->validate([
+                'current_password' => 'required|string',
+                'password' => 'required|string|min:8|confirmed',
+            ]);
+
+            if (! Hash::check($validated['current_password'], $user->password)) {
+                throw ValidationException::withMessages([
+                    'current_password' => ['Le mot de passe actuel est incorrect.'],
+                ]);
+            }
+
+            // Le cast 'hashed' du modèle User hache automatiquement la valeur.
+            $user->update(['password' => $validated['password']]);
+
+            return $this->success(null, 'Mot de passe modifié avec succès');
+        } catch (ValidationException $e) {
+            return $this->error('Erreur de validation', $e->errors(), 422);
+        } catch (\Throwable $e) {
+            return $this->error('Erreur lors de la modification', $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Déconnexion.
      */
     public function logout(Request $request)

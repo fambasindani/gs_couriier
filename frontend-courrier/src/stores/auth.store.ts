@@ -33,6 +33,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
   fetchMe: () => Promise<void>
+  setUser: (user: User) => void
   hasPermission: (slug: string) => boolean
   isAdmin: () => boolean
   isAuthenticated: () => boolean
@@ -82,6 +83,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch {
       get().logout()
     }
+  },
+
+  setUser(user) {
+    persistUser(user)
+    set({ user })
   },
 
   hasPermission(slug) {

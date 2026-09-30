@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AdminLayout } from '@/layouts/AdminLayout'
 import { ProtectedRoute } from './ProtectedRoute'
 import { LoginPage } from '@/pages/LoginPage'
+import { ProfilPage } from '@/pages/ProfilPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { DashboardStatistiquesPage } from '@/pages/DashboardStatistiquesPage'
 import { DashboardActivitePage } from '@/pages/DashboardActivitePage'
@@ -141,6 +142,7 @@ export function AppRouter() {
           <Route path="/admin/structure" element={<StructurePage />} />
           <Route path="/admin/audit" element={<JournalAuditPage />} />
           <Route path="/admin/parametres" element={<ParametresPage />} />
+          <Route path="/profil" element={<ProfilPage />} />
           {placeholderRoutes.map(([path, title]) => (
             <Route key={path} path={path} element={<PlaceholderPage title={title} />} />
           ))}

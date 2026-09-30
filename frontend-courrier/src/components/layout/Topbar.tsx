@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Bell, CheckCheck, Clock, Inbox, LogOut, Menu, Search, Settings, User as UserIcon } from 'lucide-react'
 import { MENU } from '@/config/menu'
 import { useAuthStore } from '@/stores/auth.store'
@@ -56,6 +56,7 @@ export function Topbar() {
   const location = useLocation()
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
+  const hasPermission = useAuthStore((state) => state.hasPermission)
   const toggleMobileSidebar = useUiStore((state) => state.toggleMobileSidebar)
   const [openMenu, setOpenMenu] = useState<'notif' | 'user' | null>(null)
 
@@ -180,12 +181,22 @@ export function Topbar() {
             <>
               <div className="fixed inset-0 z-40" onClick={() => setOpenMenu(null)} />
               <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-line bg-white p-2 shadow-lg">
-                <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[0.85rem] text-ink hover:bg-slate-50">
+                <Link
+                  to="/profil"
+                  onClick={() => setOpenMenu(null)}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[0.85rem] text-ink hover:bg-slate-50"
+                >
                   <UserIcon className="h-4 w-4 text-slate-400" /> Mon profil
-                </button>
-                <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[0.85rem] text-ink hover:bg-slate-50">
-                  <Settings className="h-4 w-4 text-slate-400" /> Paramètres
-                </button>
+                </Link>
+                {hasPermission('parametres.view') && (
+                  <Link
+                    to="/admin/parametres"
+                    onClick={() => setOpenMenu(null)}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[0.85rem] text-ink hover:bg-slate-50"
+                  >
+                    <Settings className="h-4 w-4 text-slate-400" /> Paramètres
+                  </Link>
+                )}
                 <hr className="my-1 border-line" />
                 <button
                   onClick={handleLogout}
