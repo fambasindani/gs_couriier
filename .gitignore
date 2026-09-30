@@ -23,6 +23,9 @@ sgec-api/.phpunit.cache
 **/.env.*.local
 !**/.env.example
 
+# Projet de référence (non versionné)
+frontend-bejamin/
+
 # IDE / OS
 .idea/
 .vscode/
