@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   LifeBuoy,
   Mail,
+  Network,
   Settings,
   Share2,
   type LucideIcon,
@@ -19,6 +20,7 @@ const ICONS: Record<string, LucideIcon> = {
   Database,
   BarChart3,
   Settings,
+  Network,
   LifeBuoy,
 }
 

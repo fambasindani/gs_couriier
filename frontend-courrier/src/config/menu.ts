@@ -6,6 +6,7 @@ export type IconName =
   | 'Database'
   | 'BarChart3'
   | 'Settings'
+  | 'Network'
   | 'LifeBuoy'
 
 export interface MenuChild {
@@ -133,9 +134,17 @@ export const MENU: MenuSection[] = [
         children: [
           { title: 'Utilisateurs', path: '/admin/utilisateurs', permission: 'users.view' },
           { title: 'Rôles & Permissions', path: '/admin/roles', permission: 'roles.view' },
-          { title: 'Structure organisationnelle', path: '/admin/structure', permission: 'structure.view' },
           { title: "Journal d'audit", path: '/admin/audit', permission: 'audit.view' },
           { title: 'Paramètres généraux', path: '/admin/parametres', permission: 'parametres.view' },
+        ],
+      },
+      {
+        title: 'Structure',
+        icon: 'Network',
+        children: [
+          { title: 'Directions', path: '/admin/structure?tab=directions', permission: 'structure.view' },
+          { title: 'Départements', path: '/admin/structure?tab=departements', permission: 'structure.view' },
+          { title: 'Services', path: '/admin/structure?tab=services', permission: 'structure.view' },
         ],
       },
     ],

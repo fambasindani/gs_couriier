@@ -65,14 +65,16 @@ export function Topbar() {
 
   const currentTitle = useMemo(() => {
     const current = `${location.pathname}${location.search}`
-    for (const section of MENU) {
-      for (const group of section.groups) {
-        const found = group.children.find(
-          (child) => child.path === current || child.path.split('?')[0] === location.pathname,
-        )
-        if (found) return found.title
-      }
-    }
+    const all = MENU.flatMap((section) => section.groups.flatMap((group) => group.children))
+
+    // 1) Correspondance exacte (gère les entrées avec query string)
+    const exact = all.find((child) => child.path === current)
+    if (exact) return exact.title
+
+    // 2) Correspondance sur le chemin de base (entrées sans query)
+    const base = all.find((child) => !child.path.includes('?') && child.path === location.pathname)
+    if (base) return base.title
+
     return location.pathname === '/' ? "Vue d'ensemble" : 'SGEC'
   }, [location.pathname, location.search])
 

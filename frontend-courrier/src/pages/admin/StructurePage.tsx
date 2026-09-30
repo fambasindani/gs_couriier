@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Building2, Landmark, Network, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -16,6 +17,8 @@ import type { UniteStructure } from '@/types'
 type Tab = 'directions' | 'departements' | 'services'
 type Entity = 'direction' | 'departement' | 'service'
 
+const TAB_VALUES: Tab[] = ['directions', 'departements', 'services']
+
 const LABELS: Record<Entity, string> = {
   direction: 'direction',
   departement: 'département',
@@ -27,7 +30,11 @@ export function StructurePage() {
   const canManage = hasPermission('structure.manage')
   const canView = hasPermission('structure.view')
 
-  const [tab, setTab] = useState<Tab>('directions')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const tab: Tab = TAB_VALUES.includes(tabParam as Tab) ? (tabParam as Tab) : 'directions'
+  const setTab = (next: Tab) => setSearchParams({ tab: next })
+
   const [directions, setDirections] = useState<UniteStructure[]>([])
   const [departements, setDepartements] = useState<UniteStructure[]>([])
   const [services, setServices] = useState<UniteStructure[]>([])
