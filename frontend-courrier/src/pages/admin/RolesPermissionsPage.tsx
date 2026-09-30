@@ -387,6 +387,10 @@ export function RolesPermissionsPage() {
               options={permissions.map((perm) => ({ value: perm.id, label: perm.nom, hint: perm.slug }))}
               selected={roleForm.permissions}
               onToggle={toggleRolePermission}
+              onSelectAll={() =>
+                setRoleForm((prev) => ({ ...prev, permissions: permissions.map((perm) => perm.id) }))
+              }
+              onClearAll={() => setRoleForm((prev) => ({ ...prev, permissions: [] }))}
               emptyLabel="Aucune permission disponible."
             />
           </Field>

@@ -376,6 +376,8 @@ export function UtilisateursPage() {
               options={roles.map((role) => ({ value: role.id, label: role.nom, hint: role.description ?? undefined }))}
               selected={form.roles}
               onToggle={toggleRole}
+              onSelectAll={() => setForm((prev) => ({ ...prev, roles: roles.map((role) => role.id) }))}
+              onClearAll={() => setForm((prev) => ({ ...prev, roles: [] }))}
               emptyLabel="Aucun rôle disponible."
             />
           </Field>
