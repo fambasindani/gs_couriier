@@ -146,6 +146,8 @@ export interface UniteStructure {
   libelle: string
   direction_id?: number
   departement_id?: number
+  direction?: UniteStructure | null
+  departement?: UniteStructure | null
 }
 
 export interface CourrierPiece {
@@ -285,6 +287,110 @@ export interface EtapeActuelle {
   description?: string | null
   user?: string | null
   date: string
+}
+
+export interface AuditLog {
+  id: number
+  user_id?: number | null
+  event: string
+  url?: string | null
+  ip_address?: string | null
+  user_agent?: string | null
+  created_at: string
+  user?: User | null
+}
+
+export interface ParametreGeneral {
+  id: number
+  cle: string
+  valeur: string | number | boolean | null
+  type: 'string' | 'int' | 'bool' | 'json'
+  groupe: string
+  description?: string | null
+}
+
+export interface RapportPeriode {
+  debut: string
+  fin: string
+}
+
+export interface RapportTraitement {
+  periode: RapportPeriode
+  compteurs: {
+    total_recus: number
+    traites: number
+    en_cours: number
+    en_retard: number
+    courriers_affectes: number
+  }
+  taux_traitement_pourcentage: number
+  delai_moyen_traitement_jours: number
+  delai_moyen_affectation_heures: number
+}
+
+export interface RapportDelais {
+  periode: RapportPeriode
+  total_avec_limite: number
+  dans_les_temps: number
+  en_retard: number
+  taux_respect_delais_pourcentage: number
+  retards: { '1_a_3_jours': number; plus_de_3_jours: number }
+  delais_moyens_par_priorite: {
+    libelle: string
+    code: string
+    niveau: number | string
+    delai_moyen_jours: number | string | null
+    total: number | string
+  }[]
+}
+
+export interface PerfUnite {
+  id: number
+  code: string
+  libelle: string
+  total_courriers: number | string
+  traites: number | string
+  en_cours?: number | string
+  delai_moyen_jours: number | string | null
+}
+
+export interface PerfAgent {
+  id: number
+  name: string
+  email: string
+  total_courriers: number | string
+  traites: number | string
+  en_cours: number | string
+  delai_moyen_jours: number | string | null
+}
+
+export interface RapportPerformanceServices {
+  periode: RapportPeriode
+  par_direction: PerfUnite[]
+  par_departement: PerfUnite[]
+  par_service: PerfUnite[]
+  top_5_services: PerfUnite[]
+  services_en_difficulte: PerfUnite[]
+}
+
+export interface RapportPerformanceAgents {
+  periode: RapportPeriode
+  agents: PerfAgent[]
+  top_3_agents: PerfAgent[]
+  total_agents_actifs: number
+}
+
+export interface RapportVolumes {
+  annee: number | string
+  par_mois: { mois: number | string; annee: number | string; total: number | string }[]
+  par_type: { libelle: string; total: number | string }[]
+  par_categorie: { libelle: string | null; total: number | string }[]
+}
+
+export interface RapportConfidentialite {
+  periode: RapportPeriode
+  par_confidentialite: { confidentialite: string; total: number | string }[]
+  tres_confidentiels_par_direction: { libelle: string; total: number | string }[]
 }
 
 export interface ArchiveCategory {

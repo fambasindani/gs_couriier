@@ -19,6 +19,15 @@ import { ArchivesListePage } from '@/pages/archives/ArchivesListePage'
 import { ArchiveCategoriesPage } from '@/pages/archives/ArchiveCategoriesPage'
 import { ArchiveEmplacementsPage } from '@/pages/archives/ArchiveEmplacementsPage'
 import { NumerisationOcrPage } from '@/pages/archives/NumerisationOcrPage'
+import { RapportStatistiquesPage } from '@/pages/rapports/RapportStatistiquesPage'
+import { RapportDelaisPage } from '@/pages/rapports/RapportDelaisPage'
+import { RapportServicesPage } from '@/pages/rapports/RapportServicesPage'
+import { RapportExportPage } from '@/pages/rapports/RapportExportPage'
+import { UtilisateursPage } from '@/pages/admin/UtilisateursPage'
+import { RolesPermissionsPage } from '@/pages/admin/RolesPermissionsPage'
+import { StructurePage } from '@/pages/admin/StructurePage'
+import { JournalAuditPage } from '@/pages/admin/JournalAuditPage'
+import { ParametresPage } from '@/pages/admin/ParametresPage'
 import { ReferentielsCrudPage } from '@/components/referentiels/ReferentielsCrudPage'
 import {
   categoriesConfig,
@@ -54,6 +63,15 @@ const IMPLEMENTED_ROUTES = new Set([
   '/referentiels/statuts',
   '/referentiels/expediteurs',
   '/referentiels/destinataires',
+  '/rapports',
+  '/rapports/delais',
+  '/rapports/services',
+  '/rapports/export',
+  '/admin/utilisateurs',
+  '/admin/roles',
+  '/admin/structure',
+  '/admin/audit',
+  '/admin/parametres',
 ])
 
 /** Génère une route par entrée de menu (hors tableau de bord), sans les query strings. */
@@ -114,6 +132,15 @@ export function AppRouter() {
             path="/referentiels/destinataires"
             element={<ReferentielsCrudPage config={destinatairesConfig} />}
           />
+          <Route path="/rapports" element={<RapportStatistiquesPage />} />
+          <Route path="/rapports/delais" element={<RapportDelaisPage />} />
+          <Route path="/rapports/services" element={<RapportServicesPage />} />
+          <Route path="/rapports/export" element={<RapportExportPage />} />
+          <Route path="/admin/utilisateurs" element={<UtilisateursPage />} />
+          <Route path="/admin/roles" element={<RolesPermissionsPage />} />
+          <Route path="/admin/structure" element={<StructurePage />} />
+          <Route path="/admin/audit" element={<JournalAuditPage />} />
+          <Route path="/admin/parametres" element={<ParametresPage />} />
           {placeholderRoutes.map(([path, title]) => (
             <Route key={path} path={path} element={<PlaceholderPage title={title} />} />
           ))}
