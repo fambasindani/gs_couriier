@@ -1,0 +1,31 @@
+# Dependencies
+**/node_modules/
+
+# Builds
+**/dist/
+**/dist-ssr/
+**/build/
+**/*.tsbuildinfo
+
+# Laravel / PHP
+sgec-api/vendor/
+sgec-api/public/storage
+sgec-api/public/hot
+sgec-api/public/build
+sgec-api/storage/*.key
+sgec-api/storage/logs/*.log
+sgec-api/.phpunit.cache
+
+# Environment & secrets
+**/.env
+**/.env.backup
+**/.env.production
+**/.env.*.local
+!**/.env.example
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log

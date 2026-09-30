@@ -1,0 +1,127 @@
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { AdminLayout } from '@/layouts/AdminLayout'
+import { ProtectedRoute } from './ProtectedRoute'
+import { LoginPage } from '@/pages/LoginPage'
+import { DashboardPage } from '@/pages/DashboardPage'
+import { DashboardStatistiquesPage } from '@/pages/DashboardStatistiquesPage'
+import { DashboardActivitePage } from '@/pages/DashboardActivitePage'
+import { CourriersListePage } from '@/pages/courriers/CourriersListePage'
+import { CourriersRetardPage } from '@/pages/courriers/CourriersRetardPage'
+import { CourriersLiesPage } from '@/pages/courriers/CourriersLiesPage'
+import { RechercheAvanceePage } from '@/pages/courriers/RechercheAvanceePage'
+import { CourrierDetailPage } from '@/pages/courriers/CourrierDetailPage'
+import { CourrierFormPage } from '@/pages/courriers/CourrierFormPage'
+import { AffectationsPage } from '@/pages/traitement/AffectationsPage'
+import { AnnotationsPage } from '@/pages/traitement/AnnotationsPage'
+import { ValidationsPage } from '@/pages/traitement/ValidationsPage'
+import { CircuitPage } from '@/pages/traitement/CircuitPage'
+import { ArchivesListePage } from '@/pages/archives/ArchivesListePage'
+import { ArchiveCategoriesPage } from '@/pages/archives/ArchiveCategoriesPage'
+import { ArchiveEmplacementsPage } from '@/pages/archives/ArchiveEmplacementsPage'
+import { NumerisationOcrPage } from '@/pages/archives/NumerisationOcrPage'
+import { ReferentielsCrudPage } from '@/components/referentiels/ReferentielsCrudPage'
+import {
+  categoriesConfig,
+  destinatairesConfig,
+  expediteursConfig,
+  prioritesConfig,
+  statutsConfig,
+  typesConfig,
+} from '@/config/referentiels-crud'
+import { PlaceholderPage } from '@/pages/PlaceholderPage'
+import { NotFoundPage } from '@/pages/NotFoundPage'
+import { MENU } from '@/config/menu'
+
+/** Pages déjà implémentées : exclues de la génération automatique des placeholders. */
+const IMPLEMENTED_ROUTES = new Set([
+  '/dashboard/statistiques',
+  '/dashboard/activite-recente',
+  '/courriers',
+  '/courriers/en-retard',
+  '/courriers/lies',
+  '/courriers/recherche',
+  '/traitement/affectations',
+  '/traitement/annotations',
+  '/traitement/validations',
+  '/traitement/circuit',
+  '/archives',
+  '/archives/ocr',
+  '/archives/categories',
+  '/archives/emplacements',
+  '/referentiels/types',
+  '/referentiels/categories',
+  '/referentiels/priorites',
+  '/referentiels/statuts',
+  '/referentiels/expediteurs',
+  '/referentiels/destinataires',
+])
+
+/** Génère une route par entrée de menu (hors tableau de bord), sans les query strings. */
+const placeholderRoutes = Array.from(
+  new Map(
+    MENU.flatMap((section) => section.groups.flatMap((group) => group.children))
+      .filter((child) => {
+        const base = child.path.split('?')[0]
+        return child.path !== '/' && !IMPLEMENTED_ROUTES.has(base)
+      })
+      .map((child) => [child.path.split('?')[0], child.title] as const),
+  ).entries(),
+)
+
+export function AppRouter() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AdminLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="/dashboard/statistiques" element={<DashboardStatistiquesPage />} />
+          <Route path="/dashboard/activite-recente" element={<DashboardActivitePage />} />
+          <Route path="/courriers" element={<CourriersListePage />} />
+          <Route path="/courriers/en-retard" element={<CourriersRetardPage />} />
+          <Route path="/courriers/lies" element={<CourriersLiesPage />} />
+          <Route path="/courriers/recherche" element={<RechercheAvanceePage />} />
+          <Route path="/courriers/nouveau" element={<CourrierFormPage />} />
+          <Route path="/courriers/:id/modifier" element={<CourrierFormPage />} />
+          <Route path="/courriers/:id" element={<CourrierDetailPage />} />
+          <Route path="/traitement/affectations" element={<AffectationsPage />} />
+          <Route path="/traitement/annotations" element={<AnnotationsPage />} />
+          <Route path="/traitement/validations" element={<ValidationsPage />} />
+          <Route path="/traitement/circuit" element={<CircuitPage />} />
+          <Route path="/archives" element={<ArchivesListePage />} />
+          <Route path="/archives/categories" element={<ArchiveCategoriesPage />} />
+          <Route path="/archives/emplacements" element={<ArchiveEmplacementsPage />} />
+          <Route path="/archives/ocr" element={<NumerisationOcrPage />} />
+          <Route path="/referentiels/types" element={<ReferentielsCrudPage config={typesConfig} />} />
+          <Route
+            path="/referentiels/categories"
+            element={<ReferentielsCrudPage config={categoriesConfig} />}
+          />
+          <Route
+            path="/referentiels/priorites"
+            element={<ReferentielsCrudPage config={prioritesConfig} />}
+          />
+          <Route
+            path="/referentiels/statuts"
+            element={<ReferentielsCrudPage config={statutsConfig} />}
+          />
+          <Route
+            path="/referentiels/expediteurs"
+            element={<ReferentielsCrudPage config={expediteursConfig} />}
+          />
+          <Route
+            path="/referentiels/destinataires"
+            element={<ReferentielsCrudPage config={destinatairesConfig} />}
+          />
+          {placeholderRoutes.map(([path, title]) => (
+            <Route key={path} path={path} element={<PlaceholderPage title={title} />} />
+          ))}
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  )
+}
