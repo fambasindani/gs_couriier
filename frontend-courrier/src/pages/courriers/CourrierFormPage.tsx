@@ -187,13 +187,14 @@ export function CourrierFormPage() {
         }
       />
 
-      {error && (
+      {error && Object.keys(fieldErrors).length === 0 && (
         <div className="mb-4 flex items-center gap-2 rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-[0.85rem] text-danger">
           <AlertTriangle className="h-4 w-4" /> {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
+      {/* noValidate : on laisse l'API déclencher les erreurs pour les afficher sous chaque champ */}
+      <form onSubmit={handleSubmit} noValidate>
         <Card className="p-5">
           {loading ? (
             <p className="py-10 text-center text-[0.85rem] text-slate-400">Chargement…</p>

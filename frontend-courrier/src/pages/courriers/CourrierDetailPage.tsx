@@ -34,7 +34,7 @@ type Tab = 'infos' | 'pieces' | 'workflow' | 'circuit'
 const TABS: { key: Tab; label: string }[] = [
   { key: 'infos', label: 'Informations' },
   { key: 'pieces', label: 'Pièces jointes' },
-  { key: 'workflow', label: 'Workflow' },
+  { key: 'workflow', label: 'Traitement' },
   { key: 'circuit', label: 'Circuit' },
 ]
 
