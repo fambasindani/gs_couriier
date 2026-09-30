@@ -187,7 +187,7 @@
 
   .menu-sub {
     list-style: none;
-    padding: 0 0 4px 0;
+    padding: 0;
     margin: 0;
     max-height: 0;
     overflow: hidden;
@@ -196,6 +196,12 @@
 
   .menu-group.open .menu-sub {
     max-height: 700px;
+  }
+
+  /* Espacement reporté sur le dernier élément (le padding du conteneur
+     créerait une bande résiduelle quand le groupe est replié). */
+  .menu-sub li:last-child a {
+    margin-bottom: 6px;
   }
 
   .menu-sub li a {
@@ -237,7 +243,6 @@
     background: linear-gradient(90deg, var(--primary-color) 0%, #1b1bd6 100%);
     color: #ffffff;
     font-weight: 600;
-    box-shadow: 0 8px 18px -8px rgba(0, 0, 145, 0.7);
   }
 
   .menu-sub li a.active::before {
