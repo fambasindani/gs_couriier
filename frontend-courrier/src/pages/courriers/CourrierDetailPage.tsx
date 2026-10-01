@@ -478,20 +478,27 @@ export function CourrierDetailPage() {
               <p className="text-[0.83rem] text-slate-400">Aucune affectation.</p>
             ) : (
               <ul className="space-y-3">
-                {(courrier.affectations ?? []).map((item) => (
-                  <li key={item.id} className="rounded-lg border border-line p-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[0.83rem] font-medium text-ink">
-                        {item.direction?.libelle ?? item.departement?.libelle ?? item.service?.libelle ?? '—'}
+                {(courrier.affectations ?? []).map((item) => {
+                  const cible =
+                    [item.direction?.libelle, item.departement?.libelle, item.service?.libelle]
+                      .filter(Boolean)
+                      .join(' › ') || '—'
+                  return (
+                    <li key={item.id} className="rounded-lg border border-line p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[0.83rem] font-medium text-ink">{cible}</span>
+                        <Badge tone="info">{item.statut}</Badge>
+                      </div>
+                      <span className="mt-1 block text-[0.75rem] text-slate-500">
+                        {item.user ? `Agent : ${item.user.name}` : 'Aucun agent assigné'}
                       </span>
-                      <Badge tone="info">{item.statut}</Badge>
-                    </div>
-                    <span className="mt-1 block text-[0.75rem] text-slate-400">
-                      {formatDate(item.date_affectation, true)}
-                      {item.user?.name ? ` • ${item.user.name}` : ''}
-                    </span>
-                  </li>
-                ))}
+                      <span className="mt-0.5 block text-[0.75rem] text-slate-400">
+                        Affecté le {formatDate(item.date_affectation, true)}
+                        {item.date_limite ? ` • Limite : ${formatDate(item.date_limite, true)}` : ''}
+                      </span>
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </Card>

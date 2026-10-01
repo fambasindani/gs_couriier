@@ -148,8 +148,12 @@ class CourrierController extends Controller
                 $courrier->load([
                     'typeCourrier', 'categorie', 'priorite', 'statut',
                     'expediteur', 'destinataire', 'createur', 'modificateur',
-                    'parent', 'reponses', 'pieces', 'affectations',
-                    'annotations', 'validations', 'historiques',
+                    'parent', 'reponses', 'pieces',
+                    'affectations.direction', 'affectations.departement',
+                    'affectations.service', 'affectations.user', 'affectations.affectePar',
+                    'annotations.user',
+                    'validations.user',
+                    'historiques',
                 ]),
                 'Détails du courrier'
             );
