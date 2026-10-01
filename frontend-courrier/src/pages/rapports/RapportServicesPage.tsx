@@ -167,7 +167,7 @@ export function RapportServicesPage() {
             <Card className="p-5">
               <div className="mb-3 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-danger" />
-                <h6 className="section-title mb-0">Services en difficulté (&gt; 7 j)</h6>
+                <h6 className="section-title mb-0">Services en difficulté (supérieur à 7 j)</h6>
               </div>
               {loading ? (
                 <RowsSkeleton rows={3} />

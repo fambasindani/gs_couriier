@@ -129,7 +129,7 @@ export function RapportDelaisPage() {
               icon={<Timer className="h-6 w-6" />}
               hint={
                 <span className="text-slate-500">
-                  {nf(data?.retards['1_a_3_jours'])} de 1-3j · {nf(data?.retards.plus_de_3_jours)} &gt; 3j
+                  {nf(data?.retards['1_a_3_jours'])} de 1 à 3 j · {nf(data?.retards.plus_de_3_jours)} supérieur à 3 j
                 </span>
               }
             />
