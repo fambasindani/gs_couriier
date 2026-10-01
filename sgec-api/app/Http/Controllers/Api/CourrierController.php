@@ -102,6 +102,8 @@ class CourrierController extends Controller
                 $validated['numero'] = Courrier::genererNumero();
                 $validated['created_by'] = auth()->id();
                 $validated['date_reception'] = $validated['date_reception'] ?? now();
+                // Colonne NOT NULL : on évite d'insérer null
+                $validated['nombre_pages'] = $validated['nombre_pages'] ?? 0;
 
                 $courrier = Courrier::create($validated);
 
@@ -187,6 +189,10 @@ class CourrierController extends Controller
                 'nombre_pages' => 'nullable|integer|min:0',
                 'observation' => 'nullable|string',
             ]);
+
+            if (array_key_exists('nombre_pages', $validated) && $validated['nombre_pages'] === null) {
+                $validated['nombre_pages'] = 0;
+            }
 
             $anciennesValeurs = $courrier->only(array_keys($validated));
             $validated['updated_by'] = auth()->id();

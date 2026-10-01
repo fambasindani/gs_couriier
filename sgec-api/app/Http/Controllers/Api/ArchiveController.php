@@ -76,6 +76,7 @@ class ArchiveController extends Controller
             $validated['cote_archive'] = Archive::genererCote();
             $validated['archive_par'] = auth()->id();
             $validated['statut_archive'] = 'ACTIF';
+            $validated['duree_conservation_ans'] = $validated['duree_conservation_ans'] ?? 5;
             $validated['date_versement'] = $validated['date_versement'] ?? now();
 
             if (! empty($validated['duree_conservation_ans'])) {
@@ -145,7 +146,9 @@ class ArchiveController extends Controller
                 'observation' => 'nullable|string',
             ]);
 
-            if (isset($validated['duree_conservation_ans'])) {
+            if (array_key_exists('duree_conservation_ans', $validated) && $validated['duree_conservation_ans'] === null) {
+                unset($validated['duree_conservation_ans']);
+            } elseif (isset($validated['duree_conservation_ans'])) {
                 $validated['date_fin_conservation'] = now()
                     ->addYears($validated['duree_conservation_ans'])
                     ->toDateString();
@@ -233,6 +236,8 @@ class ArchiveController extends Controller
                     ->addYears($validated['duree_conservation_ans'])
                     ->toDateString();
             }
+
+            $validated['duree_conservation_ans'] = $validated['duree_conservation_ans'] ?? 5;
 
             $archive = Archive::create($validated);
 
