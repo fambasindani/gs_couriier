@@ -1,7 +1,8 @@
 import { tokenStorage } from './auth-token'
 
-const API_URL = (import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000').replace(/\/+$/, '')
-const BASE_URL = `${API_URL}/api`
+/** URL de l'API (vide = même origine, via le proxy Vite en dev). */
+export const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '')
+export const BASE_URL = API_URL ? `${API_URL}/api` : '/api'
 
 export class ApiError extends Error {
   status: number

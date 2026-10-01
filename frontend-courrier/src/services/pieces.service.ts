@@ -1,8 +1,6 @@
-import { http, type QueryValue } from '@/lib/http'
+import { API_URL, http, type QueryValue } from '@/lib/http'
 import { tokenStorage } from '@/lib/auth-token'
 import type { ApiEnvelope, CourrierPiece, Paginated } from '@/types'
-
-const API_URL = (import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000').replace(/\/+$/, '')
 
 export const piecesService = {
   list(params: Record<string, QueryValue> = {}) {
