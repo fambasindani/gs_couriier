@@ -18,7 +18,12 @@ class CourrierAnnotationController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = CourrierAnnotation::with(['courrier', 'user']);
+            $user = auth()->user();
+
+            $query = CourrierAnnotation::with(['courrier', 'user'])
+                ->whereHas('courrier', function ($q) use ($user) {
+                    $q->visiblePour($user)->visibleConfidentialite($user);
+                });
 
             if ($request->filled('courrier_id')) {
                 $query->where('courrier_id', $request->courrier_id);
@@ -51,11 +56,19 @@ class CourrierAnnotationController extends Controller
                 'etat' => 'nullable|in:EN_ATTENTE,EN_COURS,EXECUTEE,ANNULEE',
             ]);
 
+            $courrier = Courrier::findOrFail($validated['courrier_id']);
+
+            if (! $courrier->estVisiblePar(auth()->user())) {
+                return $this->error('Accès refusé à ce courrier.', null, 403);
+            }
+
+            if ($courrier->statut?->code === 'ARCHIVE') {
+                return $this->error('Un courrier archivé ne peut plus être annoté.', null, 409);
+            }
+
             $validated['user_id'] = auth()->id();
 
             $annotation = CourrierAnnotation::create($validated);
-
-            $courrier = Courrier::find($validated['courrier_id']);
 
             AuditLogger::log(
                 'courrier.annote',
@@ -86,6 +99,10 @@ class CourrierAnnotationController extends Controller
     public function show(CourrierAnnotation $annotation)
     {
         try {
+            if (! $annotation->courrier?->estVisiblePar(auth()->user())) {
+                return $this->error('Accès refusé à cette annotation.', null, 403);
+            }
+
             return $this->success(
                 $annotation->load(['courrier', 'user']),
                 'Détails de l\'annotation'
@@ -98,6 +115,10 @@ class CourrierAnnotationController extends Controller
     public function update(Request $request, CourrierAnnotation $annotation)
     {
         try {
+            if (! $annotation->courrier?->estVisiblePar($request->user())) {
+                return $this->error('Accès refusé à cette annotation.', null, 403);
+            }
+
             $validated = $request->validate([
                 'annotation' => 'sometimes|string',
                 'date_limite' => 'nullable|date',
@@ -120,6 +141,10 @@ class CourrierAnnotationController extends Controller
     public function destroy(CourrierAnnotation $annotation)
     {
         try {
+            if (! $annotation->courrier?->estVisiblePar(auth()->user())) {
+                return $this->error('Accès refusé à cette annotation.', null, 403);
+            }
+
             $annotation->delete();
             return $this->success(null, 'Annotation supprimée');
         } catch (\Throwable $e) {

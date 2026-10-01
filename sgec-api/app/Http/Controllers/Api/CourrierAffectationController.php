@@ -19,10 +19,14 @@ class CourrierAffectationController extends Controller
     public function index(Request $request)
     {
         try {
+            $user = auth()->user();
+
             $query = CourrierAffectation::with([
                 'courrier', 'direction', 'departement', 'service',
                 'user', 'affectePar',
-            ]);
+            ])->whereHas('courrier', function ($q) use ($user) {
+                $q->visiblePour($user)->visibleConfidentialite($user);
+            });
 
             if ($request->filled('courrier_id')) {
                 $query->where('courrier_id', $request->courrier_id);
@@ -57,6 +61,16 @@ class CourrierAffectationController extends Controller
                 'date_limite' => 'nullable|date',
             ]);
 
+            $courrier = Courrier::findOrFail($validated['courrier_id']);
+
+            if (! $courrier->estVisiblePar(auth()->user())) {
+                return $this->error('Accès refusé à ce courrier.', null, 403);
+            }
+
+            if ($courrier->statut?->code === 'ARCHIVE') {
+                return $this->error('Un courrier archivé ne peut plus être affecté.', null, 409);
+            }
+
             // Au moins une cible doit être renseignée
             if (empty($validated['direction_id']) 
                 && empty($validated['departement_id']) 
@@ -72,7 +86,6 @@ class CourrierAffectationController extends Controller
             $affectation = CourrierAffectation::create($validated);
 
             // Mettre à jour le statut du courrier (résolu par code, pas d'ID en dur)
-            $courrier = Courrier::find($validated['courrier_id']);
             $courrier->update(['statut_id' => StatutCourrier::idParCode('AFFECTE')]);
 
             AuditLogger::log(
@@ -104,6 +117,10 @@ class CourrierAffectationController extends Controller
     public function show(CourrierAffectation $affectation)
     {
         try {
+            if (! $affectation->courrier?->estVisiblePar(auth()->user())) {
+                return $this->error('Accès refusé à cette affectation.', null, 403);
+            }
+
             return $this->success(
                 $affectation->load(['courrier', 'direction', 'departement', 'service', 'user', 'affectePar']),
                 'Détails de l\'affectation'
@@ -116,6 +133,10 @@ class CourrierAffectationController extends Controller
     public function update(Request $request, CourrierAffectation $affectation)
     {
         try {
+            if (! $affectation->courrier?->estVisiblePar($request->user())) {
+                return $this->error('Accès refusé à cette affectation.', null, 403);
+            }
+
             $validated = $request->validate([
                 'direction_id' => 'nullable|exists:directions,id',
                 'departement_id' => 'nullable|exists:departements,id',
@@ -180,6 +201,10 @@ class CourrierAffectationController extends Controller
     public function destroy(CourrierAffectation $affectation)
     {
         try {
+            if (! $affectation->courrier?->estVisiblePar(auth()->user())) {
+                return $this->error('Accès refusé à cette affectation.', null, 403);
+            }
+
             $affectation->delete();
             return $this->success(null, 'Affectation supprimée');
         } catch (\Throwable $e) {

@@ -19,7 +19,12 @@ class CourrierValidationController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = CourrierValidation::with(['courrier', 'user']);
+            $user = auth()->user();
+
+            $query = CourrierValidation::with(['courrier', 'user'])
+                ->whereHas('courrier', function ($q) use ($user) {
+                    $q->visiblePour($user)->visibleConfidentialite($user);
+                });
 
             if ($request->filled('courrier_id')) {
                 $query->where('courrier_id', $request->courrier_id);
@@ -51,13 +56,22 @@ class CourrierValidationController extends Controller
                 'commentaire' => 'nullable|string',
             ]);
 
+            $courrier = Courrier::findOrFail($validated['courrier_id']);
+
+            if (! $courrier->estVisiblePar(auth()->user())) {
+                return $this->error('Accès refusé à ce courrier.', null, 403);
+            }
+
+            if ($courrier->statut?->code === 'ARCHIVE') {
+                return $this->error('Un courrier archivé ne peut plus être validé.', null, 409);
+            }
+
             $validated['user_id'] = auth()->id();
             $validated['date_validation'] = now();
 
             $validation = CourrierValidation::create($validated);
 
             // Mettre à jour le statut du courrier selon la décision (résolu par code)
-            $courrier = Courrier::find($validated['courrier_id']);
 
             $codeStatut = match ($validated['decision']) {
                 'VISE', 'VALIDE' => 'VALIDE',
@@ -98,6 +112,10 @@ class CourrierValidationController extends Controller
     public function show(CourrierValidation $validation)
     {
         try {
+            if (! $validation->courrier?->estVisiblePar(auth()->user())) {
+                return $this->error('Accès refusé à cette validation.', null, 403);
+            }
+
             return $this->success(
                 $validation->load(['courrier', 'user']),
                 'Détails de la validation'
@@ -110,6 +128,10 @@ class CourrierValidationController extends Controller
     public function update(Request $request, CourrierValidation $validation)
     {
         try {
+            if (! $validation->courrier?->estVisiblePar($request->user())) {
+                return $this->error('Accès refusé à cette validation.', null, 403);
+            }
+
             $validated = $request->validate([
                 'decision' => 'sometimes|in:VISE,VALIDE,REJETE',
                 'commentaire' => 'nullable|string',
@@ -153,6 +175,10 @@ class CourrierValidationController extends Controller
     public function destroy(CourrierValidation $validation)
     {
         try {
+            if (! $validation->courrier?->estVisiblePar(auth()->user())) {
+                return $this->error('Accès refusé à cette validation.', null, 403);
+            }
+
             $validation->delete();
             return $this->success(null, 'Validation supprimée');
         } catch (\Throwable $e) {

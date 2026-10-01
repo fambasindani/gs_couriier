@@ -17,6 +17,10 @@ class CircuitController extends Controller
     public function circuit(Courrier $courrier)
     {
         try {
+            if (! $courrier->estVisiblePar(auth()->user())) {
+                return $this->error('Accès refusé à ce courrier.', null, 403);
+            }
+
             return $this->success(
                 CircuitService::getCircuit($courrier),
                 'Circuit du courrier'
@@ -32,6 +36,10 @@ class CircuitController extends Controller
     public function etapeActuelle(Courrier $courrier)
     {
         try {
+            if (! $courrier->estVisiblePar(auth()->user())) {
+                return $this->error('Accès refusé à ce courrier.', null, 403);
+            }
+
             return $this->success(
                 CircuitService::getEtapeActuelle($courrier),
                 'Étape actuelle du courrier'
@@ -47,6 +55,10 @@ class CircuitController extends Controller
     public function timeline(Courrier $courrier)
     {
         try {
+            if (! $courrier->estVisiblePar(auth()->user())) {
+                return $this->error('Accès refusé à ce courrier.', null, 403);
+            }
+
             $historiques = $courrier->historiques()
                 ->with('user')
                 ->orderBy('created_at')

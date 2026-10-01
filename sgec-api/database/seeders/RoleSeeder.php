@@ -40,6 +40,7 @@ class RoleSeeder extends Seeder
         );
         $chef->permissions()->sync(
             Permission::whereIn('slug', [
+                'users.view',
                 'courriers.view', 'courriers.create', 'courriers.update',
                 'courriers.affecter', 'courriers.annoter',
                 'courriers.confidentiel.view',
