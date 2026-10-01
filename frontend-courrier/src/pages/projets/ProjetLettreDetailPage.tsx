@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   Archive,
   ArrowLeft,
@@ -7,9 +7,11 @@ import {
   Clock,
   Download,
   Eye,
+  FileCheck,
   FileText,
   PenLine,
   Send,
+  Trash2,
   Upload,
   XCircle,
 } from 'lucide-react'
@@ -24,8 +26,10 @@ import { TimelineSkeleton } from '@/components/ui/Skeletons'
 import { projetsLettresService } from '@/services/projetsLettres.service'
 import { formatDate } from '@/lib/utils'
 import { projetStatutLabel, projetStatutTone } from '@/lib/projetStatuts'
+import { telechargerBlob } from '@/lib/lettreFichiers'
 import { useAuthStore } from '@/stores/auth.store'
 import { useConfirm } from '@/stores/confirm.store'
+import { useToast } from '@/stores/toast.store'
 import type { ProjetLettre } from '@/types'
 
 type Tab = 'infos' | 'versions' | 'validations' | 'historique'
@@ -45,13 +49,16 @@ const DECISION_TONES: Record<string, BadgeTone> = {
 
 export function ProjetLettreDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const hasPermission = useAuthStore((state) => state.hasPermission)
   const confirm = useConfirm()
+  const toast = useToast()
 
   const [projet, setProjet] = useState<ProjetLettre | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [accuseBusy, setAccuseBusy] = useState(false)
   const [tab, setTab] = useState<Tab>('infos')
   const [reloadKey, setReloadKey] = useState(0)
 
@@ -90,12 +97,13 @@ export function ProjetLettreDetailPage() {
 
   const refresh = () => setReloadKey((value) => value + 1)
 
-  const run = async (fn: () => Promise<unknown>) => {
+  const run = async (fn: () => Promise<unknown>, successMessage = 'Opération effectuée') => {
     setBusy(true)
     setError(null)
     try {
       await fn()
       refresh()
+      toast(successMessage)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur.')
     } finally {
@@ -106,7 +114,7 @@ export function ProjetLettreDetailPage() {
   const handleGenererWord = () =>
     run(async () => {
       await projetsLettresService.genererWord(id!)
-    })
+    }, 'Document Word généré')
 
   const handleImporter = async (file: File) => {
     const ok = await confirm({
@@ -118,7 +126,7 @@ export function ProjetLettreDetailPage() {
     if (!ok) return
     await run(async () => {
       await projetsLettresService.importerVersion(id!, file)
-    })
+    }, 'Version importée')
   }
 
   const handleSoumettre = async () => {
@@ -130,14 +138,14 @@ export function ProjetLettreDetailPage() {
     if (!ok) return
     await run(async () => {
       await projetsLettresService.soumettre(id!)
-    })
+    }, 'Projet soumis à validation')
   }
 
   const handleDecision = async () => {
     setDecisionOpen(false)
     await run(async () => {
       await projetsLettresService.decision(id!, decision, observation || undefined)
-    })
+    }, 'Décision enregistrée')
   }
 
   const handleSigner = async () => {
@@ -149,7 +157,7 @@ export function ProjetLettreDetailPage() {
     if (!ok) return
     await run(async () => {
       await projetsLettresService.signer(id!)
-    })
+    }, 'Projet signé')
   }
 
   const handleCourrierSortant = async () => {
@@ -161,14 +169,14 @@ export function ProjetLettreDetailPage() {
     if (!ok) return
     await run(async () => {
       await projetsLettresService.creerCourrierSortant(id!)
-    })
+    }, 'Courrier sortant créé')
   }
 
   const handleExpedier = async () => {
     setExpedierOpen(false)
     await run(async () => {
       await projetsLettresService.expedier(id!, modeExpedition, expedierComment || undefined)
-    })
+    }, 'Courrier expédié')
   }
 
   const handleArchiver = async () => {
@@ -180,7 +188,62 @@ export function ProjetLettreDetailPage() {
     if (!ok) return
     await run(async () => {
       await projetsLettresService.archiver(id!)
+    }, 'Projet archivé')
+  }
+
+  const handleAccuse = async () => {
+    const ce = projet?.courrier_entrant
+    if (!ce) return
+    const ok = await confirm({
+      title: 'Accusé de réception',
+      message: `Générer l'accusé de réception du courrier ${ce.numero} (PDF avec QR code) ?`,
+      confirmLabel: 'Générer',
     })
+    if (!ok) return
+
+    setAccuseBusy(true)
+    setError(null)
+    try {
+      const { genererAccusePdfBlob } = await import('@/lib/accusePdf')
+      const blob = await genererAccusePdfBlob({
+        numero: ce.numero,
+        reference_externe: ce.reference_externe ?? null,
+        objet: ce.objet,
+        expediteur: ce.expediteur?.nom ?? null,
+        destinataire: ce.destinataire?.nom ?? null,
+        type: ce.type_courrier?.libelle ?? null,
+        confidentialite: ce.confidentialite,
+        date_reception: formatDate(ce.date_reception, true),
+        verifyUrl: `${window.location.origin}/courriers/${ce.id}`,
+      })
+      telechargerBlob(blob, `accuse_reception_${ce.numero}.pdf`)
+      toast('Accusé de réception généré')
+    } catch {
+      setError("Erreur lors de la génération de l'accusé de réception.")
+    } finally {
+      setAccuseBusy(false)
+    }
+  }
+
+  const handleSupprimer = async () => {
+    const ok = await confirm({
+      title: 'Supprimer le projet',
+      message: `Supprimer définitivement ${projet?.reference_projet} et toutes ses versions ? Cette action est irréversible.`,
+      confirmLabel: 'Supprimer',
+      tone: 'danger',
+    })
+    if (!ok) return
+
+    setBusy(true)
+    setError(null)
+    try {
+      await projetsLettresService.remove(id!)
+      toast('Projet de lettre supprimé')
+      navigate('/projets-lettres')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la suppression.')
+      setBusy(false)
+    }
   }
 
   const handleAnnuler = async () => {
@@ -193,7 +256,7 @@ export function ProjetLettreDetailPage() {
     if (!ok) return
     await run(async () => {
       await projetsLettresService.annuler(id!)
-    })
+    }, 'Projet annulé')
   }
 
   if (loading) {
@@ -275,9 +338,9 @@ export function ProjetLettreDetailPage() {
                 Décider
               </Button>
             )}
-            {canSigner && statut === 'A_SIGNER' && (
+            {canSigner && !['SIGNE', 'EXPEDIE', 'ARCHIVE', 'ANNULE'].includes(statut) && (
               <Button icon={<CheckCheck className="h-4 w-4" />} onClick={handleSigner} disabled={busy}>
-                Signer
+                {statut === 'A_SIGNER' ? 'Signer' : 'Signer directement'}
               </Button>
             )}
             {canUpdate && statut === 'SIGNE' && (
@@ -295,9 +358,24 @@ export function ProjetLettreDetailPage() {
                 Archiver
               </Button>
             )}
+            {projet.courrier_entrant && (
+              <Button
+                variant="outline"
+                icon={<FileCheck className="h-4 w-4" />}
+                onClick={handleAccuse}
+                disabled={accuseBusy}
+              >
+                Accusé
+              </Button>
+            )}
             {canUpdate && !terminal && statut !== 'EXPEDIE' && (
               <Button variant="danger" icon={<XCircle className="h-4 w-4" />} onClick={handleAnnuler} disabled={busy}>
                 Annuler
+              </Button>
+            )}
+            {canUpdate && (
+              <Button variant="danger" icon={<Trash2 className="h-4 w-4" />} onClick={handleSupprimer} disabled={busy}>
+                Supprimer
               </Button>
             )}
           </>

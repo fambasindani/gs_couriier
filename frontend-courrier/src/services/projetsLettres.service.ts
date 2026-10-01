@@ -13,6 +13,7 @@ export const projetsLettresService = {
     http.post<ApiEnvelope<ProjetLettre>>('/projets-lettres', payload),
   update: (id: number | string, payload: Record<string, unknown>) =>
     http.put<ApiEnvelope<ProjetLettre>>(`/projets-lettres/${id}`, payload),
+  remove: (id: number | string) => http.delete<ApiEnvelope<null>>(`/projets-lettres/${id}`),
 
   genererWord: (id: number | string) =>
     http.post<ApiEnvelope<VersionProjetLettre>>(`/projets-lettres/${id}/generer-word`),

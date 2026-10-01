@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Topbar } from '@/components/layout/Topbar'
 import { ConfirmHost } from '@/components/ui/ConfirmHost'
+import { ToastHost } from '@/components/ui/ToastHost'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { useUiStore } from '@/stores/ui.store'
 
@@ -26,6 +27,7 @@ export function AdminLayout() {
         </main>
       </div>
       <ConfirmHost />
+      <ToastHost />
     </>
   )
 }

@@ -36,6 +36,7 @@ import { nomFichierLettre, telechargerBlob } from '@/lib/lettreFichiers'
 import { formatDate } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
 import { useConfirm } from '@/stores/confirm.store'
+import { useToast } from '@/stores/toast.store'
 import { transitionsAutorisees } from '@/lib/statuts'
 import type {
   Courrier,
@@ -71,6 +72,7 @@ export function CourrierDetailPage() {
   const navigate = useNavigate()
   const hasPermission = useAuthStore((state) => state.hasPermission)
   const confirm = useConfirm()
+  const toast = useToast()
 
   const [courrier, setCourrier] = useState<CourrierDetail | null>(null)
   const [timeline, setTimeline] = useState<TimelineItem[]>([])
@@ -252,6 +254,7 @@ export function CourrierDetailPage() {
       const { genererLettrePdfBlob } = await import('@/lib/lettrePdf')
       const blob = await genererLettrePdfBlob(lettre.objet, lettre.corps, courrier.numero)
       telechargerBlob(blob, nomFichierLettre(lettre.objet ?? courrier.numero, 'pdf'))
+      toast('PDF généré')
     } catch {
       setLettreError('Erreur lors de la génération du PDF.')
     } finally {
@@ -267,6 +270,7 @@ export function CourrierDetailPage() {
       const { genererLettreDocxBlob } = await import('@/lib/lettreDocx')
       const blob = await genererLettreDocxBlob(lettre.objet, lettre.corps, courrier.numero)
       telechargerBlob(blob, nomFichierLettre(lettre.objet ?? courrier.numero, 'docx'))
+      toast('Fichier Word généré')
     } catch {
       setLettreError('Erreur lors de la génération du fichier Word.')
     } finally {
@@ -317,6 +321,7 @@ export function CourrierDetailPage() {
         verifyUrl: `${window.location.origin}/courriers/${courrier.id}`,
       })
       telechargerBlob(blob, `accuse_reception_${courrier.numero}.pdf`)
+      toast('Accusé de réception généré')
     } catch {
       setActionError("Erreur lors de la génération de l'accusé de réception.")
     } finally {

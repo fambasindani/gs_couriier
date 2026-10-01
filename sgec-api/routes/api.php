@@ -404,6 +404,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware('permission:projets.update');
     Route::post('/projets-lettres/{projetLettre}/annuler', [ProjetLettreController::class, 'annuler'])
         ->middleware('permission:projets.update');
+    Route::delete('/projets-lettres/{projetLettre}', [ProjetLettreController::class, 'destroy'])
+        ->middleware('permission:projets.update');
 
     // =====================================================================
     // Notifications (personnalisées par périmètre)

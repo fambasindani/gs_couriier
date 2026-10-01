@@ -21,7 +21,9 @@ class ProjetLettreController extends Controller
     use ApiResponse;
 
     private const RELATIONS = [
-        'courrierEntrant', 'courrierSortant', 'serviceRedacteur', 'createur', 'signataire',
+        'courrierEntrant.typeCourrier', 'courrierEntrant.expediteur', 'courrierEntrant.destinataire',
+        'courrierSortant.typeCourrier',
+        'serviceRedacteur', 'createur', 'signataire',
         'versions.utilisateur', 'validations.valideur', 'validations.version', 'historique.utilisateur',
     ];
 
@@ -238,8 +240,10 @@ class ProjetLettreController extends Controller
     public function signer(Request $request, ProjetLettre $projetLettre)
     {
         try {
-            if ($projetLettre->statut !== 'A_SIGNER') {
-                return $this->error('Le projet doit être validé avant signature.', null, 409);
+            // Signature DIRECTE autorisée (sans passer par soumission/validation) pour les
+            // personnes habilitées. On bloque seulement les états déjà signés/terminaux.
+            if (in_array($projetLettre->statut, ['SIGNE', 'EXPEDIE', 'ARCHIVE', 'ANNULE'], true)) {
+                return $this->error('Ce projet ne peut plus être signé (statut ' . $projetLettre->statut . ').', null, 409);
             }
 
             $version = $projetLettre->derniereVersion();
@@ -353,6 +357,24 @@ class ProjetLettreController extends Controller
             return $this->success($projetLettre->fresh(self::RELATIONS), 'Projet annulé');
         } catch (\Throwable $e) {
             return $this->error('Erreur lors de l\'annulation', $e->getMessage(), 500);
+        }
+    }
+
+    public function destroy(ProjetLettre $projetLettre)
+    {
+        try {
+            $reference = $projetLettre->reference_projet;
+
+            // Suppression des fichiers stockés
+            Storage::disk('local')->deleteDirectory('projets_lettres/' . $projetLettre->id);
+
+            $projetLettre->delete(); // cascade versions/validations/historique
+
+            AuditLogger::log('projet_lettre.supprime', "Projet {$reference} supprimé");
+
+            return $this->success(null, 'Projet de lettre supprimé');
+        } catch (\Throwable $e) {
+            return $this->error('Erreur lors de la suppression', $e->getMessage(), 500);
         }
     }
 }
