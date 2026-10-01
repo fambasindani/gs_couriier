@@ -295,6 +295,21 @@ export interface EtapeActuelle {
   date: string
 }
 
+export interface NotificationItem {
+  id: string
+  type: 'retard' | 'affectation' | 'courrier' | string
+  title: string
+  description: string
+  date: string | null
+  date_humaine: string
+  url: string
+}
+
+export interface NotificationsResponse {
+  total: number
+  items: NotificationItem[]
+}
+
 export interface AuditLog {
   id: number
   user_id?: number | null

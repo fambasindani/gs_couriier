@@ -1,55 +1,35 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Bell, CheckCheck, Clock, Inbox, LogOut, Menu, Search, Settings, User as UserIcon } from 'lucide-react'
+import {
+  Bell,
+  Clock,
+  Inbox,
+  LogOut,
+  Menu,
+  Search,
+  Settings,
+  Share2,
+  User as UserIcon,
+  type LucideIcon,
+} from 'lucide-react'
 import { MENU } from '@/config/menu'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
 import { useConfirm } from '@/stores/confirm.store'
+import { notificationsService } from '@/services/notifications.service'
 import { initials } from '@/lib/utils'
+import type { NotificationItem } from '@/types'
 
-interface NotificationItem {
-  id: number
-  icon: 'inbox' | 'check' | 'clock'
-  tone: string
-  title: string
-  description: string
-  time: string
-  unread?: boolean
+const NOTIF_TONES: Record<string, string> = {
+  retard: 'bg-danger/10 text-danger',
+  affectation: 'bg-primary/10 text-primary',
+  courrier: 'bg-info/10 text-info',
 }
 
-const NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 1,
-    icon: 'inbox',
-    tone: 'bg-primary/10 text-primary',
-    title: 'Nouveau courrier',
-    description: 'Ministère du Budget a envoyé le rapport T3.',
-    time: 'Il y a 5 min',
-    unread: true,
-  },
-  {
-    id: 2,
-    icon: 'check',
-    tone: 'bg-success/10 text-success',
-    title: 'Visa accordé',
-    description: 'Le DG a validé le courrier sortant DGRK.',
-    time: 'Il y a 30 min',
-    unread: true,
-  },
-  {
-    id: 3,
-    icon: 'clock',
-    tone: 'bg-danger/10 text-danger',
-    title: 'Dossier en retard',
-    description: "Le délai d'instruction est dépassé pour l'affectation #44.",
-    time: 'Il y a 2h',
-  },
-]
-
-const NOTIF_ICONS = {
-  inbox: Inbox,
-  check: CheckCheck,
-  clock: Clock,
+const NOTIF_ICONS: Record<string, LucideIcon> = {
+  retard: Clock,
+  affectation: Share2,
+  courrier: Inbox,
 }
 
 export function Topbar() {
@@ -60,26 +40,35 @@ export function Topbar() {
   const hasPermission = useAuthStore((state) => state.hasPermission)
   const toggleMobileSidebar = useUiStore((state) => state.toggleMobileSidebar)
   const [openMenu, setOpenMenu] = useState<'notif' | 'user' | null>(null)
+  const [notifications, setNotifications] = useState<NotificationItem[]>([])
+  const confirm = useConfirm()
 
   const roleLabel = user?.roles?.[0]?.nom ?? 'Utilisateur'
-  const unreadCount = NOTIFICATIONS.filter((item) => item.unread).length
+  const unreadCount = notifications.length
+
+  const loadNotifications = () => {
+    notificationsService
+      .list()
+      .then((res) => setNotifications(res.items ?? []))
+      .catch(() => setNotifications([]))
+  }
+
+  useEffect(() => {
+    loadNotifications()
+  }, [])
 
   const currentTitle = useMemo(() => {
     const current = `${location.pathname}${location.search}`
     const all = MENU.flatMap((section) => section.groups.flatMap((group) => group.children))
 
-    // 1) Correspondance exacte (gère les entrées avec query string)
     const exact = all.find((child) => child.path === current)
     if (exact) return exact.title
 
-    // 2) Correspondance sur le chemin de base (entrées sans query)
     const base = all.find((child) => !child.path.includes('?') && child.path === location.pathname)
     if (base) return base.title
 
     return location.pathname === '/' ? "Vue d'ensemble" : 'SGEC'
   }, [location.pathname, location.search])
-
-  const confirm = useConfirm()
 
   const handleLogout = async () => {
     const ok = await confirm({
@@ -117,7 +106,11 @@ export function Topbar() {
         <div className="relative">
           <button
             className="relative inline-flex h-[42px] w-[42px] items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-primary"
-            onClick={() => setOpenMenu((value) => (value === 'notif' ? null : 'notif'))}
+            onClick={() => {
+              const next = openMenu === 'notif' ? null : 'notif'
+              setOpenMenu(next)
+              if (next === 'notif') loadNotifications()
+            }}
             aria-label="Notifications"
           >
             <Bell className="h-[1.15rem] w-[1.15rem]" />
@@ -134,38 +127,56 @@ export function Topbar() {
               <div className="absolute right-0 z-50 mt-3 w-[380px] max-w-[90vw] overflow-hidden rounded-xl bg-white shadow-[0_10px_30px_-5px_rgba(0,0,0,0.12)]">
                 <div className="flex items-center justify-between border-b border-line px-5 py-4 text-[0.9rem] font-semibold">
                   Notifications
-                  <button className="text-[0.75rem] font-normal text-primary">Tout marquer comme lu</button>
+                  <span className="text-[0.72rem] font-normal text-slate-400">
+                    {unreadCount} élément(s)
+                  </span>
                 </div>
-                <div className="max-h-[340px] overflow-y-auto">
-                  {NOTIFICATIONS.map((item) => {
-                    const ItemIcon = NOTIF_ICONS[item.icon]
+                <div className="max-h-[360px] overflow-y-auto">
+                  {notifications.length === 0 && (
+                    <p className="px-5 py-8 text-center text-[0.82rem] text-slate-400">
+                      Aucune notification.
+                    </p>
+                  )}
+                  {notifications.map((item) => {
+                    const ItemIcon = NOTIF_ICONS[item.type] ?? Bell
+                    const tone = NOTIF_TONES[item.type] ?? 'bg-slate-500/10 text-slate-500'
                     return (
-                      <button
+                      <Link
                         key={item.id}
-                        className={`flex w-full items-start border-b border-[#f5f5f5] px-5 py-3.5 text-left transition-colors hover:bg-[#f9f9fc] ${
-                          item.unread ? 'bg-[#f0f0ff]' : ''
-                        }`}
+                        to={item.url}
+                        onClick={() => setOpenMenu(null)}
+                        className="flex w-full items-start border-b border-[#f5f5f5] px-5 py-3.5 text-left transition-colors hover:bg-[#f9f9fc]"
                       >
-                        <span className={`mr-3 flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center rounded-[10px] ${item.tone}`}>
+                        <span
+                          className={`mr-3 flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center rounded-[10px] ${tone}`}
+                        >
                           <ItemIcon className="h-4 w-4" />
                         </span>
-                        <span className="flex-grow">
-                          <span className="flex justify-between">
-                            <span className="text-[0.8rem] font-semibold text-ink">{item.title}</span>
-                            <span className="text-[0.7rem] text-slate-400">{item.time}</span>
+                        <span className="min-w-0 flex-grow">
+                          <span className="flex justify-between gap-2">
+                            <span className="text-[0.8rem] font-semibold text-ink">
+                              {item.title}
+                            </span>
+                            <span className="flex-shrink-0 text-[0.7rem] text-slate-400">
+                              {item.date_humaine}
+                            </span>
                           </span>
-                          <span className="mt-0.5 block max-w-[240px] truncate text-[0.78rem] text-slate-500">
+                          <span className="mt-0.5 block truncate text-[0.78rem] text-slate-500">
                             {item.description}
                           </span>
                         </span>
-                      </button>
+                      </Link>
                     )
                   })}
                 </div>
                 <div className="border-t border-line bg-slate-50 p-2 text-center">
-                  <button className="text-[0.78rem] font-semibold text-primary">
-                    Voir toutes les notifications
-                  </button>
+                  <Link
+                    to="/dashboard/activite-recente"
+                    onClick={() => setOpenMenu(null)}
+                    className="text-[0.78rem] font-semibold text-primary"
+                  >
+                    Voir toute l'activité
+                  </Link>
                 </div>
               </div>
             </>

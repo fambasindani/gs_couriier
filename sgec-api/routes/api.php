@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\StatutCourrierController;
 use App\Http\Controllers\Api\TypeCourrierController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RapportController;
+use App\Http\Controllers\Api\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -348,6 +349,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware('permission:courriers.update');
     Route::delete('/courrier-pieces/{piece}', [CourrierPieceController::class, 'destroy'])
         ->middleware('permission:courriers.delete');
+
+    // =====================================================================
+    // Notifications (personnalisées par périmètre)
+    // =====================================================================
+    Route::get('/notifications', [NotificationController::class, 'index'])
+        ->middleware('permission:courriers.view');
 
     // =====================================================================
     // Module Dashboard — Statistiques
