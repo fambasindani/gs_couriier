@@ -5,12 +5,15 @@ import {
   ArrowLeft,
   Archive,
   CheckCheck,
+  Copy,
   Download,
   FileText,
   Link2,
+  MailPlus,
   Paperclip,
   Pencil,
   Plus,
+  Printer,
   Trash2,
   Unlink,
   Upload,
@@ -20,18 +23,26 @@ import { Card } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Badge, ConfidentialiteBadge, StatutBadge } from '@/components/ui/Badge'
-import { Field, Input } from '@/components/ui/Field'
+import { Field, Input, Select } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { TimelineSkeleton } from '@/components/ui/Skeletons'
 import { courriersService } from '@/services/courriers.service'
 import { piecesService } from '@/services/pieces.service'
+import { lettreModelesService } from '@/services/lettres.service'
 import { formatDate } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
 import { useConfirm } from '@/stores/confirm.store'
 import { transitionsAutorisees } from '@/lib/statuts'
-import type { Courrier, CourrierDetail, CourrierPiece, TimelineItem } from '@/types'
+import type {
+  Courrier,
+  CourrierDetail,
+  CourrierPiece,
+  LettreGeneree,
+  LettreModele,
+  TimelineItem,
+} from '@/types'
 
 type Tab = 'infos' | 'pieces' | 'workflow' | 'circuit'
 
@@ -74,6 +85,12 @@ export function CourrierDetailPage() {
   const [unlinkOpen, setUnlinkOpen] = useState(false)
   const [pieceToDelete, setPieceToDelete] = useState<CourrierPiece | null>(null)
   const [confirmBusy, setConfirmBusy] = useState(false)
+  const [lettreOpen, setLettreOpen] = useState(false)
+  const [lettreModeles, setLettreModeles] = useState<LettreModele[]>([])
+  const [lettreModeleId, setLettreModeleId] = useState('')
+  const [lettre, setLettre] = useState<LettreGeneree | null>(null)
+  const [lettreBusy, setLettreBusy] = useState(false)
+  const [lettreError, setLettreError] = useState<string | null>(null)
   const [linkQuery, setLinkQuery] = useState('')
   const [linkResults, setLinkResults] = useState<Courrier[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
@@ -183,6 +200,58 @@ export function CourrierDetailPage() {
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Erreur lors de la clôture.')
     }
+  }
+
+  const texteLettre = (l: LettreGeneree) => (l.objet ? `${l.objet}\n\n` : '') + l.corps
+
+  const openLettre = async () => {
+    setLettreOpen(true)
+    setLettre(null)
+    setLettreError(null)
+    setLettreModeleId('')
+    try {
+      const res = await lettreModelesService.list({ actif: 1, per_page: 100 })
+      setLettreModeles(res.data.data.filter((m) => m.actif))
+    } catch {
+      setLettreModeles([])
+    }
+  }
+
+  const handleGenererLettre = async () => {
+    if (!courrier || !lettreModeleId) return
+    setLettreBusy(true)
+    setLettreError(null)
+    try {
+      const res = await courriersService.genererLettre(courrier.id, Number(lettreModeleId))
+      setLettre(res.data)
+    } catch (err) {
+      setLettreError(err instanceof Error ? err.message : 'Erreur lors de la génération.')
+    } finally {
+      setLettreBusy(false)
+    }
+  }
+
+  const handleCopyLettre = async () => {
+    if (!lettre) return
+    try {
+      await navigator.clipboard.writeText(texteLettre(lettre))
+    } catch {
+      /* presse-papiers indisponible */
+    }
+  }
+
+  const handlePrintLettre = () => {
+    if (!lettre) return
+    const w = window.open('', '_blank', 'width=820,height=920')
+    if (!w) return
+    w.document.write(
+      '<html><head><title>Lettre</title><style>body{font-family:Inter,Arial,sans-serif;padding:40px;font-size:14px;line-height:1.5}</style></head><body><pre id="l" style="white-space:pre-wrap;font-family:inherit;margin:0"></pre></body></html>',
+    )
+    w.document.close()
+    const pre = w.document.getElementById('l')
+    if (pre) pre.textContent = texteLettre(lettre)
+    w.focus()
+    w.print()
   }
 
   const handleLink = async (parent: Courrier) => {
@@ -318,6 +387,9 @@ export function CourrierDetailPage() {
                 Retour
               </Button>
             </Link>
+            <Button variant="outline" icon={<MailPlus className="h-4 w-4" />} onClick={openLettre}>
+              Lettre
+            </Button>
             {actions.modifier && !isArchived && (
               <Link to={`/courriers/${courrier.id}/modifier`}>
                 <Button variant="outline" icon={<Pencil className="h-4 w-4" />}>
@@ -760,6 +832,74 @@ export function CourrierDetailPage() {
         onConfirm={handleDeletePiece}
         onClose={() => setPieceToDelete(null)}
       />
+
+      {/* Générer un projet de lettre */}
+      <Modal
+        open={lettreOpen}
+        title={`Générer une lettre — ${courrier.numero}`}
+        size="lg"
+        onClose={() => setLettreOpen(false)}
+        footer={
+          lettre ? (
+            <>
+              <Button variant="outline" icon={<Copy className="h-4 w-4" />} onClick={handleCopyLettre}>
+                Copier
+              </Button>
+              <Button icon={<Printer className="h-4 w-4" />} onClick={handlePrintLettre}>
+                Imprimer
+              </Button>
+            </>
+          ) : (
+            <Button variant="outline" onClick={() => setLettreOpen(false)}>
+              Fermer
+            </Button>
+          )
+        }
+      >
+        {lettreError && (
+          <div className="mb-3 rounded-lg border border-danger/20 bg-danger/5 px-3 py-2 text-[0.82rem] text-danger">
+            {lettreError}
+          </div>
+        )}
+        <div className="space-y-4">
+          <Field label="Modèle de lettre" required>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Select
+                value={lettreModeleId}
+                onChange={(event) => setLettreModeleId(event.target.value)}
+              >
+                <option value="">— Sélectionner un modèle —</option>
+                {lettreModeles.map((modele) => (
+                  <option key={modele.id} value={modele.id}>
+                    {modele.nom}
+                  </option>
+                ))}
+              </Select>
+              <Button
+                onClick={handleGenererLettre}
+                disabled={!lettreModeleId || lettreBusy}
+                className="sm:flex-shrink-0"
+              >
+                {lettreBusy ? 'Génération…' : 'Générer'}
+              </Button>
+            </div>
+            {lettreModeles.length === 0 && (
+              <span className="mt-1 block text-[0.75rem] text-slate-400">
+                Aucun modèle actif. Créez-en dans « Référentiels → Modèles de lettres ».
+              </span>
+            )}
+          </Field>
+
+          {lettre && (
+            <div>
+              <span className="mb-1 block text-[0.8rem] font-semibold text-ink">Aperçu</span>
+              <pre className="max-h-[45vh] overflow-auto whitespace-pre-wrap rounded-lg border border-line bg-surface p-4 text-[0.82rem] text-slate-700">
+                {texteLettre(lettre)}
+              </pre>
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   )
 }

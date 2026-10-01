@@ -30,6 +30,7 @@ import { StructurePage } from '@/pages/admin/StructurePage'
 import { JournalAuditPage } from '@/pages/admin/JournalAuditPage'
 import { ParametresPage } from '@/pages/admin/ParametresPage'
 import { ReferentielsCrudPage } from '@/components/referentiels/ReferentielsCrudPage'
+import { LettreModelesPage } from '@/pages/referentiels/LettreModelesPage'
 import {
   categoriesConfig,
   destinatairesConfig,
@@ -64,6 +65,7 @@ const IMPLEMENTED_ROUTES = new Set([
   '/referentiels/statuts',
   '/referentiels/expediteurs',
   '/referentiels/destinataires',
+  '/referentiels/lettres',
   '/rapports',
   '/rapports/delais',
   '/rapports/services',
@@ -133,6 +135,7 @@ export function AppRouter() {
             path="/referentiels/destinataires"
             element={<ReferentielsCrudPage config={destinatairesConfig} />}
           />
+          <Route path="/referentiels/lettres" element={<LettreModelesPage />} />
           <Route path="/rapports" element={<RapportStatistiquesPage />} />
           <Route path="/rapports/delais" element={<RapportDelaisPage />} />
           <Route path="/rapports/services" element={<RapportServicesPage />} />

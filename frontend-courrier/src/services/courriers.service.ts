@@ -6,6 +6,7 @@ import type {
   CourrierLies,
   CourrierStats,
   CourrierTimeline,
+  LettreGeneree,
   Paginated,
 } from '@/types'
 
@@ -130,6 +131,12 @@ export const courriersService = {
 
   cloturer(id: number | string) {
     return http.post<ApiEnvelope<Courrier>>(`/courriers/${id}/cloturer`)
+  },
+
+  genererLettre(id: number | string, lettreModeleId: number) {
+    return http.post<ApiEnvelope<LettreGeneree>>(`/courriers/${id}/lettre`, {
+      lettre_modele_id: lettreModeleId,
+    })
   },
 
   timeline(id: number | string) {

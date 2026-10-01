@@ -106,6 +106,7 @@ export const MENU: MenuSection[] = [
           { title: 'Statuts', path: '/referentiels/statuts', permission: 'courriers.view' },
           { title: 'Expéditeurs', path: '/referentiels/expediteurs', permission: 'courriers.view' },
           { title: 'Destinataires', path: '/referentiels/destinataires', permission: 'courriers.view' },
+          { title: 'Modèles de lettres', path: '/referentiels/lettres', permission: 'courriers.view' },
         ],
       },
     ],

@@ -295,6 +295,25 @@ export interface EtapeActuelle {
   date: string
 }
 
+export interface LettreModele {
+  id: number
+  nom: string
+  objet?: string | null
+  corps: string
+  type_courrier_id?: number | null
+  actif: boolean
+  created_by?: number | null
+  type_courrier?: Referentiel | null
+  createur?: User | null
+}
+
+export interface LettreGeneree {
+  modele: { id: number; nom: string }
+  objet: string | null
+  corps: string
+  courrier: { id: number; numero: string }
+}
+
 export interface NotificationItem {
   id: string
   type: 'retard' | 'affectation' | 'courrier' | string

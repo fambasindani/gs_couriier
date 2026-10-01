@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\TypeCourrierController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RapportController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\LettreModeleController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -247,6 +248,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/destinataires/{destinataire}', [DestinataireController::class, 'destroy'])
         ->middleware('permission:courriers.delete');
 
+    // Modèles de lettres
+    Route::get('/lettre-modeles', [LettreModeleController::class, 'index'])
+        ->middleware('permission:courriers.view');
+    Route::post('/lettre-modeles', [LettreModeleController::class, 'store'])
+        ->middleware('permission:courriers.create');
+    Route::get('/lettre-modeles/{lettreModele}', [LettreModeleController::class, 'show'])
+        ->middleware('permission:courriers.view');
+    Route::put('/lettre-modeles/{lettreModele}', [LettreModeleController::class, 'update'])
+        ->middleware('permission:courriers.update');
+    Route::delete('/lettre-modeles/{lettreModele}', [LettreModeleController::class, 'destroy'])
+        ->middleware('permission:courriers.delete');
+
     // =====================================================================
     // Module Courrier — Table principale + fonctionnalités avancées
     // ⚠️ ORDRE CRITIQUE : du plus spécifique au plus générique
@@ -288,6 +301,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Clôture d'un courrier
     Route::post('/courriers/{courrier}/cloturer', [CourrierController::class, 'cloturer'])
         ->middleware('permission:courriers.update');
+
+    // Génération d'un projet de lettre depuis un modèle
+    Route::post('/courriers/{courrier}/lettre', [CourrierController::class, 'genererLettre'])
+        ->middleware('permission:courriers.view');
 
     // ---- 3️⃣ CRUD génériques (EN DERNIER) ----
     Route::get('/courriers/{courrier}', [CourrierController::class, 'show'])

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Helpers\AuditLogger;
 use App\Models\Courrier;
+use App\Models\LettreModele;
 use App\Models\StatutCourrier;
 use App\Services\CircuitService;
 use App\Traits\ApiResponse;
@@ -316,6 +317,63 @@ class CourrierController extends Controller
             );
         } catch (\Throwable $e) {
             return $this->error('Erreur lors de la clôture', $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Génère un projet de lettre à partir d'un modèle, en fusionnant les
+     * variables {{...}} avec les données du courrier.
+     */
+    public function genererLettre(Request $request, Courrier $courrier)
+    {
+        try {
+            if (! $courrier->estVisiblePar($request->user())) {
+                return $this->error('Accès refusé à ce courrier.', null, 403);
+            }
+
+            $validated = $request->validate([
+                'lettre_modele_id' => 'required|exists:lettre_modeles,id',
+            ]);
+
+            $modele = LettreModele::findOrFail($validated['lettre_modele_id']);
+
+            $courrier->load(['typeCourrier', 'categorie', 'priorite', 'statut', 'expediteur', 'destinataire']);
+
+            $variables = [
+                'numero' => $courrier->numero,
+                'objet' => $courrier->objet,
+                'reference_externe' => $courrier->reference_externe ?? '',
+                'date_courrier' => optional($courrier->date_courrier)->format('d/m/Y') ?? '',
+                'date_reception' => optional($courrier->date_reception)->format('d/m/Y H:i') ?? '',
+                'date_limite' => optional($courrier->date_limite)->format('d/m/Y H:i') ?? '',
+                'type' => $courrier->typeCourrier?->libelle ?? '',
+                'categorie' => $courrier->categorie?->libelle ?? '',
+                'priorite' => $courrier->priorite?->libelle ?? '',
+                'statut' => $courrier->statut?->libelle ?? '',
+                'confidentialite' => $courrier->confidentialite,
+                'expediteur' => $courrier->expediteur?->nom ?? '',
+                'destinataire' => $courrier->destinataire?->nom ?? '',
+                'date_du_jour' => now()->format('d/m/Y'),
+            ];
+
+            $fusionner = function (?string $texte) use ($variables) {
+                return preg_replace_callback(
+                    '/\{\{\s*([a-z_]+)\s*\}\}/i',
+                    fn ($m) => $variables[strtolower($m[1])] ?? $m[0],
+                    (string) $texte
+                );
+            };
+
+            return $this->success([
+                'modele' => ['id' => $modele->id, 'nom' => $modele->nom],
+                'objet' => $fusionner($modele->objet),
+                'corps' => $fusionner($modele->corps),
+                'courrier' => ['id' => $courrier->id, 'numero' => $courrier->numero],
+            ], 'Lettre générée');
+        } catch (ValidationException $e) {
+            return $this->error('Erreur de validation', $e->errors(), 422);
+        } catch (\Throwable $e) {
+            return $this->error('Erreur lors de la génération', $e->getMessage(), 500);
         }
     }
 
