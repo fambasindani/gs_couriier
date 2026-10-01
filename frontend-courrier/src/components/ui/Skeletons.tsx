@@ -48,6 +48,21 @@ export function TableBodySkeleton({ rows = 5, cols = 6 }: { rows?: number; cols?
   )
 }
 
+/** Squelette de lignes (hors tableau) : listes, cartes. */
+export function RowsSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: rows }).map((_, index) => (
+        <div key={index} className="flex items-center gap-3">
+          <Skeleton {...common} width="25%" height={14} />
+          <Skeleton {...common} width="45%" height={14} />
+          <Skeleton {...common} width="20%" height={14} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 /** Squelette d'une timeline (activité / circuit). */
 export function TimelineSkeleton({ rows = 4 }: { rows?: number }) {
   return (

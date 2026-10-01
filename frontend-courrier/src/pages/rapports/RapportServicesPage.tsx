@@ -3,7 +3,7 @@ import { AlertTriangle, Users, Building2, Award } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { TableBodySkeleton } from '@/components/ui/Skeletons'
+import { RowsSkeleton } from '@/components/ui/Skeletons'
 import { PeriodFilter, firstDayOfMonth, today } from '@/components/rapports/PeriodFilter'
 import { rapportsService } from '@/services/rapports.service'
 import { cn, nf, toFixed1 } from '@/lib/utils'
@@ -142,7 +142,7 @@ export function RapportServicesPage() {
                 <h6 className="section-title mb-0">Top 5 services</h6>
               </div>
               {loading ? (
-                <TableBodySkeleton rows={5} cols={3} />
+                <RowsSkeleton rows={5} />
               ) : (services?.top_5_services.length ?? 0) === 0 ? (
                 <p className="text-[0.83rem] text-slate-400">Aucune donnée.</p>
               ) : (
@@ -170,7 +170,7 @@ export function RapportServicesPage() {
                 <h6 className="section-title mb-0">Services en difficulté (&gt; 7 j)</h6>
               </div>
               {loading ? (
-                <TableBodySkeleton rows={3} cols={2} />
+                <RowsSkeleton rows={3} />
               ) : (services?.services_en_difficulte.length ?? 0) === 0 ? (
                 <p className="text-[0.83rem] text-slate-400">Aucun service en difficulté.</p>
               ) : (
@@ -190,7 +190,7 @@ export function RapportServicesPage() {
 
           <Card className="mt-5 p-5">
             {loading ? (
-              <TableBodySkeleton rows={8} cols={5} />
+              <RowsSkeleton rows={8} />
             ) : (
               <>
                 <UniteTable title="Par direction" rows={services?.par_direction ?? []} />
@@ -208,7 +208,7 @@ export function RapportServicesPage() {
             {loading
               ? Array.from({ length: 3 }).map((_, index) => (
                   <Card key={index} className="p-5">
-                    <TableBodySkeleton rows={2} cols={1} />
+                    <RowsSkeleton rows={2} />
                   </Card>
                 ))
               : (agents?.top_3_agents ?? []).map((agent: PerfAgent, index: number) => (
@@ -242,7 +242,7 @@ export function RapportServicesPage() {
               </span>
             </div>
             {loading ? (
-              <TableBodySkeleton rows={8} cols={5} />
+              <RowsSkeleton rows={8} />
             ) : (agents?.agents.length ?? 0) === 0 ? (
               <EmptyState icon={<Users className="h-6 w-6" />} title="Aucune donnée agent" />
             ) : (
