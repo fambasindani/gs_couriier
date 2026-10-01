@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Courrier;
 use App\Models\CourrierAffectation;
-use App\Models\CourrierHistorique;
 use App\Models\TypeCourrier;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -22,31 +21,29 @@ class DashboardController extends Controller
     public function overview(Request $request)
     {
         try {
-            $totalCourriers = Courrier::count();
+            $user = $request->user();
+            $base = Courrier::visiblePour($user)->visibleConfidentialite($user);
 
-            // Par type de courrier
-            $entrants = Courrier::whereHas('typeCourrier', fn ($q) => $q->where('code', 'ENTRANT'))->count();
-            $sortants = Courrier::whereHas('typeCourrier', fn ($q) => $q->where('code', 'SORTANT'))->count();
-            $internes = Courrier::whereHas('typeCourrier', fn ($q) => $q->where('code', 'INTERNE'))->count();
+            $totalCourriers = (clone $base)->count();
 
-            // Par statut
-            $enCours = Courrier::whereHas('statut', fn ($q) => $q->whereIn('code', ['AFFECTE', 'EN_COURS']))->count();
-            $traites = Courrier::whereHas('statut', fn ($q) => $q->where('code', 'TRAITE'))->count();
-            $valides = Courrier::whereHas('statut', fn ($q) => $q->where('code', 'VALIDE'))->count();
-            $clotures = Courrier::whereHas('statut', fn ($q) => $q->where('code', 'CLOTURE'))->count();
+            $entrants = (clone $base)->whereHas('typeCourrier', fn ($q) => $q->where('code', 'ENTRANT'))->count();
+            $sortants = (clone $base)->whereHas('typeCourrier', fn ($q) => $q->where('code', 'SORTANT'))->count();
+            $internes = (clone $base)->whereHas('typeCourrier', fn ($q) => $q->where('code', 'INTERNE'))->count();
 
-            // Courriers en retard (date_limite dépassée et non traités)
-            $enRetard = Courrier::where('date_limite', '<', now())
+            $enCours = (clone $base)->whereHas('statut', fn ($q) => $q->whereIn('code', ['AFFECTE', 'EN_COURS']))->count();
+            $traites = (clone $base)->whereHas('statut', fn ($q) => $q->where('code', 'TRAITE'))->count();
+            $valides = (clone $base)->whereHas('statut', fn ($q) => $q->where('code', 'VALIDE'))->count();
+            $clotures = (clone $base)->whereHas('statut', fn ($q) => $q->where('code', 'CLOTURE'))->count();
+
+            $enRetard = (clone $base)->where('date_limite', '<', now())
                 ->whereDoesntHave('statut', fn ($q) => $q->whereIn('code', ['TRAITE', 'VALIDE', 'CLOTURE', 'REJETE', 'ARCHIVE']))
                 ->count();
 
-            // Ce mois
-            $ceMois = Courrier::whereMonth('created_at', now()->month)
+            $ceMois = (clone $base)->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
                 ->count();
 
-            // Mois précédent pour le calcul de tendance
-            $moisPrecedent = Courrier::whereMonth('created_at', now()->subMonth()->month)
+            $moisPrecedent = (clone $base)->whereMonth('created_at', now()->subMonth()->month)
                 ->whereYear('created_at', now()->subMonth()->year)
                 ->count();
 
@@ -54,10 +51,12 @@ class DashboardController extends Controller
                 ? round((($ceMois - $moisPrecedent) / $moisPrecedent) * 100, 1)
                 : 0;
 
-            // Pièces jointes totales
-            $totalPieces = DB::table('courrier_pieces')->count();
+            // Pièces jointes des courriers visibles
+            $visibleIds = (clone $base)->pluck('id');
+            $totalPieces = $visibleIds->isEmpty()
+                ? 0
+                : DB::table('courrier_pieces')->whereIn('courrier_id', $visibleIds)->count();
 
-            // Utilisateurs actifs
             $utilisateursActifs = DB::table('users')->where('actif', true)->count();
 
             return $this->success([
@@ -87,8 +86,13 @@ class DashboardController extends Controller
     public function statistiques(Request $request)
     {
         try {
+            $user = $request->user();
+            $base = Courrier::visiblePour($user)->visibleConfidentialite($user);
+
             // Par type de courrier
-            $parType = TypeCourrier::withCount('courriers')
+            $parType = TypeCourrier::withCount(['courriers' => function ($q) use ($user) {
+                $q->visiblePour($user)->visibleConfidentialite($user);
+            }])
                 ->get()
                 ->map(fn ($t) => [
                     'libelle' => $t->libelle,
@@ -97,14 +101,14 @@ class DashboardController extends Controller
                 ]);
 
             // Par statut
-            $parStatut = DB::table('courriers')
+            $parStatut = (clone $base)
                 ->join('statut_courriers', 'courriers.statut_id', '=', 'statut_courriers.id')
                 ->select('statut_courriers.libelle', 'statut_courriers.code', DB::raw('COUNT(*) as total'))
                 ->groupBy('statut_courriers.id', 'statut_courriers.libelle', 'statut_courriers.code')
                 ->get();
 
             // Par priorité
-            $parPriorite = DB::table('courriers')
+            $parPriorite = (clone $base)
                 ->join('priorites', 'courriers.priorite_id', '=', 'priorites.id')
                 ->select('priorites.libelle', 'priorites.code', 'priorites.niveau', DB::raw('COUNT(*) as total'))
                 ->groupBy('priorites.id', 'priorites.libelle', 'priorites.code', 'priorites.niveau')
@@ -112,20 +116,20 @@ class DashboardController extends Controller
                 ->get();
 
             // Par catégorie
-            $parCategorie = DB::table('courriers')
+            $parCategorie = (clone $base)
                 ->leftJoin('categorie_courriers', 'courriers.categorie_id', '=', 'categorie_courriers.id')
                 ->select('categorie_courriers.libelle', DB::raw('COUNT(*) as total'))
                 ->groupBy('categorie_courriers.id', 'categorie_courriers.libelle')
                 ->get();
 
             // Par confidentialité
-            $parConfidentialite = DB::table('courriers')
+            $parConfidentialite = (clone $base)
                 ->select('confidentialite', DB::raw('COUNT(*) as total'))
                 ->groupBy('confidentialite')
                 ->get();
 
             // Délai moyen de traitement (en jours)
-            $delaiMoyen = Courrier::whereNotNull('date_cloture')
+            $delaiMoyen = (clone $base)->whereNotNull('date_cloture')
                 ->whereNotNull('date_reception')
                 ->selectRaw('AVG(DATEDIFF(date_cloture, date_reception)) as moyenne')
                 ->value('moyenne');
@@ -179,6 +183,9 @@ class DashboardController extends Controller
     public function volumeMensuel(Request $request)
     {
         try {
+            $user = $request->user();
+            $base = Courrier::visiblePour($user)->visibleConfidentialite($user);
+
             $mois = [];
             $entrants = [];
             $sortants = [];
@@ -188,17 +195,17 @@ class DashboardController extends Controller
                 $date = now()->subMonths($i);
                 $mois[] = $date->translatedFormat('M Y');
 
-                $entrants[] = Courrier::whereHas('typeCourrier', fn ($q) => $q->where('code', 'ENTRANT'))
+                $entrants[] = (clone $base)->whereHas('typeCourrier', fn ($q) => $q->where('code', 'ENTRANT'))
                     ->whereMonth('created_at', $date->month)
                     ->whereYear('created_at', $date->year)
                     ->count();
 
-                $sortants[] = Courrier::whereHas('typeCourrier', fn ($q) => $q->where('code', 'SORTANT'))
+                $sortants[] = (clone $base)->whereHas('typeCourrier', fn ($q) => $q->where('code', 'SORTANT'))
                     ->whereMonth('created_at', $date->month)
                     ->whereYear('created_at', $date->year)
                     ->count();
 
-                $internes[] = Courrier::whereHas('typeCourrier', fn ($q) => $q->where('code', 'INTERNE'))
+                $internes[] = (clone $base)->whereHas('typeCourrier', fn ($q) => $q->where('code', 'INTERNE'))
                     ->whereMonth('created_at', $date->month)
                     ->whereYear('created_at', $date->year)
                     ->count();
@@ -223,19 +230,22 @@ class DashboardController extends Controller
     public function repartition(Request $request)
     {
         try {
-            $parStatut = DB::table('courriers')
+            $user = $request->user();
+            $base = Courrier::visiblePour($user)->visibleConfidentialite($user);
+
+            $parStatut = (clone $base)
                 ->join('statut_courriers', 'courriers.statut_id', '=', 'statut_courriers.id')
                 ->select('statut_courriers.libelle as label', DB::raw('COUNT(*) as value'))
                 ->groupBy('statut_courriers.id', 'statut_courriers.libelle')
                 ->get();
 
-            $parPriorite = DB::table('courriers')
+            $parPriorite = (clone $base)
                 ->join('priorites', 'courriers.priorite_id', '=', 'priorites.id')
                 ->select('priorites.libelle as label', DB::raw('COUNT(*) as value'))
                 ->groupBy('priorites.id', 'priorites.libelle')
                 ->get();
 
-            $parConfidentialite = DB::table('courriers')
+            $parConfidentialite = (clone $base)
                 ->select('confidentialite as label', DB::raw('COUNT(*) as value'))
                 ->groupBy('confidentialite')
                 ->get();
@@ -256,12 +266,14 @@ class DashboardController extends Controller
     public function courriersRecents(Request $request)
     {
         try {
+            $user = $request->user();
             $limit = $request->get('limit', 10);
 
-            $courriers = Courrier::with([
-                'typeCourrier', 'categorie', 'priorite', 'statut',
-                'expediteur', 'destinataire', 'createur',
-            ])
+            $courriers = Courrier::visiblePour($user)->visibleConfidentialite($user)
+                ->with([
+                    'typeCourrier', 'categorie', 'priorite', 'statut',
+                    'expediteur', 'destinataire', 'createur',
+                ])
                 ->orderByDesc('created_at')
                 ->limit($limit)
                 ->get();
@@ -278,9 +290,10 @@ class DashboardController extends Controller
     public function courriersRetard(Request $request)
     {
         try {
-            $courriers = Courrier::with([
-                'typeCourrier', 'priorite', 'statut', 'expediteur',
-            ])
+            $user = $request->user();
+
+            $courriers = Courrier::visiblePour($user)->visibleConfidentialite($user)
+                ->with(['typeCourrier', 'priorite', 'statut', 'expediteur'])
                 ->where('date_limite', '<', now())
                 ->whereDoesntHave('statut', fn ($q) => $q->whereIn('code', ['TRAITE', 'VALIDE', 'CLOTURE', 'REJETE', 'ARCHIVE']))
                 ->orderBy('date_limite')
@@ -305,7 +318,6 @@ class DashboardController extends Controller
         try {
             $user = $request->user();
 
-            // Récupérer les IDs des courriers affectés à cet utilisateur
             $courrierIds = CourrierAffectation::where('user_id', $user->id)
                 ->whereIn('statut', ['AFFECTE', 'PRIS_EN_CHARGE', 'EN_TRAITEMENT'])
                 ->pluck('courrier_id');

@@ -5,9 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Courrier;
 use App\Models\CourrierAffectation;
-use App\Models\CourrierHistorique;
-use App\Models\Direction;
-use App\Models\User;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -23,13 +20,14 @@ class RapportController extends Controller
     public function traitement(Request $request)
     {
         try {
-            // Filtres optionnels
+            $user = $request->user();
             $dateDebut = $request->get('date_debut', now()->startOfMonth()->toDateString());
             $dateFin = $request->get('date_fin', now()->toDateString());
 
-            $base = Courrier::whereBetween('date_reception', [$dateDebut, Carbon::parse($dateFin)->endOfDay()]);
+            $base = Courrier::whereBetween('date_reception', [$dateDebut, Carbon::parse($dateFin)->endOfDay()])
+                ->visiblePour($user)
+                ->visibleConfidentialite($user);
 
-            // Compteurs principaux
             $total = (clone $base)->count();
             $traites = (clone $base)->whereHas('statut', fn ($q) => $q->whereIn('code', ['TRAITE', 'VALIDE', 'CLOTURE']))->count();
             $enCours = (clone $base)->whereHas('statut', fn ($q) => $q->whereIn('code', ['AFFECTE', 'EN_COURS']))->count();
@@ -38,24 +36,22 @@ class RapportController extends Controller
                 ->whereDoesntHave('statut', fn ($q) => $q->whereIn('code', ['TRAITE', 'VALIDE', 'CLOTURE', 'REJETE', 'ARCHIVE']))
                 ->count();
 
-            // Taux de traitement
             $tauxTraitement = $total > 0 ? round(($traites / $total) * 100, 1) : 0;
 
-            // Délai moyen de traitement (en jours)
             $delaiMoyen = (clone $base)->whereNotNull('date_cloture')
                 ->whereNotNull('date_reception')
                 ->selectRaw('AVG(DATEDIFF(date_cloture, date_reception)) as moyenne')
                 ->value('moyenne');
 
-            // Nombre d'affectations par courrier
             $courriersAvecAffectations = CourrierAffectation::whereBetween('created_at', [$dateDebut, Carbon::parse($dateFin)->endOfDay()])
+                ->whereIn('courrier_id', $this->visibleCourrierIds($user))
                 ->distinct('courrier_id')
                 ->count('courrier_id');
 
-            // Temps moyen entre réception et première affectation
             $delaiAffectation = DB::table('courrier_affectations')
                 ->join('courriers', 'courrier_affectations.courrier_id', '=', 'courriers.id')
                 ->whereBetween('courriers.date_reception', [$dateDebut, Carbon::parse($dateFin)->endOfDay()])
+                ->whereIn('courriers.id', $this->visibleCourrierIds($user))
                 ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, courriers.date_reception, courrier_affectations.date_affectation)) as moyenne')
                 ->value('moyenne');
 
@@ -86,14 +82,16 @@ class RapportController extends Controller
     public function performanceServices(Request $request)
     {
         try {
+            $user = $request->user();
             $dateDebut = $request->get('date_debut', now()->startOfMonth()->toDateString());
             $dateFin = $request->get('date_fin', now()->toDateString());
+            $visibleIds = $this->visibleCourrierIds($user);
 
-            // Performance par direction
             $parDirection = DB::table('courrier_affectations')
                 ->join('directions', 'courrier_affectations.direction_id', '=', 'directions.id')
                 ->join('courriers', 'courrier_affectations.courrier_id', '=', 'courriers.id')
                 ->whereBetween('courriers.date_reception', [$dateDebut, Carbon::parse($dateFin)->endOfDay()])
+                ->whereIn('courriers.id', $visibleIds)
                 ->select(
                     'directions.id',
                     'directions.code',
@@ -106,11 +104,11 @@ class RapportController extends Controller
                 ->groupBy('directions.id', 'directions.code', 'directions.libelle')
                 ->get();
 
-            // Performance par département
             $parDepartement = DB::table('courrier_affectations')
                 ->join('departements', 'courrier_affectations.departement_id', '=', 'departements.id')
                 ->join('courriers', 'courrier_affectations.courrier_id', '=', 'courriers.id')
                 ->whereBetween('courriers.date_reception', [$dateDebut, Carbon::parse($dateFin)->endOfDay()])
+                ->whereIn('courriers.id', $visibleIds)
                 ->select(
                     'departements.id',
                     'departements.code',
@@ -122,11 +120,11 @@ class RapportController extends Controller
                 ->groupBy('departements.id', 'departements.code', 'departements.libelle')
                 ->get();
 
-            // Performance par service
             $parService = DB::table('courrier_affectations')
                 ->join('services', 'courrier_affectations.service_id', '=', 'services.id')
                 ->join('courriers', 'courrier_affectations.courrier_id', '=', 'courriers.id')
                 ->whereBetween('courriers.date_reception', [$dateDebut, Carbon::parse($dateFin)->endOfDay()])
+                ->whereIn('courriers.id', $visibleIds)
                 ->select(
                     'services.id',
                     'services.code',
@@ -138,17 +136,11 @@ class RapportController extends Controller
                 ->groupBy('services.id', 'services.code', 'services.libelle')
                 ->get();
 
-            // Top 5 services les plus actifs
             $topServices = $parService->sortByDesc('total_courriers')->take(5)->values();
-
-            // Services en difficulté (délai moyen > 7 jours)
             $servicesEnDifficulte = $parService->filter(fn ($s) => $s->delai_moyen_jours > 7)->values();
 
             return $this->success([
-                'periode' => [
-                    'debut' => $dateDebut,
-                    'fin' => $dateFin,
-                ],
+                'periode' => ['debut' => $dateDebut, 'fin' => $dateFin],
                 'par_direction' => $parDirection,
                 'par_departement' => $parDepartement,
                 'par_service' => $parService,
@@ -166,13 +158,16 @@ class RapportController extends Controller
     public function performanceAgents(Request $request)
     {
         try {
+            $user = $request->user();
             $dateDebut = $request->get('date_debut', now()->startOfMonth()->toDateString());
             $dateFin = $request->get('date_fin', now()->toDateString());
+            $visibleIds = $this->visibleCourrierIds($user);
 
             $parAgent = DB::table('courrier_affectations')
                 ->join('users', 'courrier_affectations.user_id', '=', 'users.id')
                 ->join('courriers', 'courrier_affectations.courrier_id', '=', 'courriers.id')
                 ->whereBetween('courriers.date_reception', [$dateDebut, Carbon::parse($dateFin)->endOfDay()])
+                ->whereIn('courriers.id', $visibleIds)
                 ->whereNotNull('courrier_affectations.user_id')
                 ->select(
                     'users.id',
@@ -187,14 +182,10 @@ class RapportController extends Controller
                 ->orderByDesc('traites')
                 ->get();
 
-            // Top 3 agents
             $top3 = $parAgent->take(3)->values();
 
             return $this->success([
-                'periode' => [
-                    'debut' => $dateDebut,
-                    'fin' => $dateFin,
-                ],
+                'periode' => ['debut' => $dateDebut, 'fin' => $dateFin],
                 'agents' => $parAgent,
                 'top_3_agents' => $top3,
                 'total_agents_actifs' => $parAgent->count(),
@@ -210,11 +201,14 @@ class RapportController extends Controller
     public function delais(Request $request)
     {
         try {
+            $user = $request->user();
             $dateDebut = $request->get('date_debut', now()->startOfMonth()->toDateString());
             $dateFin = $request->get('date_fin', now()->toDateString());
 
             $base = Courrier::whereBetween('date_reception', [$dateDebut, Carbon::parse($dateFin)->endOfDay()])
-                ->whereNotNull('date_limite');
+                ->whereNotNull('date_limite')
+                ->visiblePour($user)
+                ->visibleConfidentialite($user);
 
             $total = (clone $base)->count();
             $dansLesTemps = (clone $base)->where('date_limite', '>=', now())
@@ -224,7 +218,6 @@ class RapportController extends Controller
                 ->whereDoesntHave('statut', fn ($q) => $q->whereIn('code', ['TRAITE', 'VALIDE', 'CLOTURE', 'REJETE', 'ARCHIVE']))
                 ->count();
 
-            // Répartition des retards par tranche
             $retard1a3 = (clone $base)->whereNotNull('date_limite')
                 ->where('date_limite', '<', now())
                 ->where('date_limite', '>=', now()->subDays(3))
@@ -233,10 +226,8 @@ class RapportController extends Controller
                 ->where('date_limite', '<', now()->subDays(3))
                 ->count();
 
-            // Délais moyens par priorité
-            $parPriorite = DB::table('courriers')
+            $parPriorite = (clone $base)
                 ->join('priorites', 'courriers.priorite_id', '=', 'priorites.id')
-                ->whereBetween('courriers.date_reception', [$dateDebut, Carbon::parse($dateFin)->endOfDay()])
                 ->whereNotNull('courriers.date_cloture')
                 ->select(
                     'priorites.libelle',
@@ -250,10 +241,7 @@ class RapportController extends Controller
                 ->get();
 
             return $this->success([
-                'periode' => [
-                    'debut' => $dateDebut,
-                    'fin' => $dateFin,
-                ],
+                'periode' => ['debut' => $dateDebut, 'fin' => $dateFin],
                 'total_avec_limite' => $total,
                 'dans_les_temps' => $dansLesTemps,
                 'en_retard' => $enRetard,
@@ -275,30 +263,29 @@ class RapportController extends Controller
     public function volumes(Request $request)
     {
         try {
+            $user = $request->user();
             $annee = $request->get('annee', now()->year);
+            $base = Courrier::visiblePour($user)->visibleConfidentialite($user);
 
-            // Volume par mois
-            $parMois = DB::table('courriers')
+            $parMois = (clone $base)
                 ->select(
-                    DB::raw('MONTH(created_at) as mois'),
-                    DB::raw('YEAR(created_at) as annee'),
+                    DB::raw('MONTH(courriers.created_at) as mois'),
+                    DB::raw('YEAR(courriers.created_at) as annee'),
                     DB::raw('COUNT(*) as total')
                 )
-                ->whereYear('created_at', $annee)
+                ->whereYear('courriers.created_at', $annee)
                 ->groupBy('annee', 'mois')
                 ->orderBy('mois')
                 ->get();
 
-            // Volume par type de courrier
-            $parType = DB::table('courriers')
+            $parType = (clone $base)
                 ->join('type_courriers', 'courriers.type_courrier_id', '=', 'type_courriers.id')
                 ->whereYear('courriers.created_at', $annee)
                 ->select('type_courriers.libelle', DB::raw('COUNT(*) as total'))
                 ->groupBy('type_courriers.id', 'type_courriers.libelle')
                 ->get();
 
-            // Volume par catégorie
-            $parCategorie = DB::table('courriers')
+            $parCategorie = (clone $base)
                 ->leftJoin('categorie_courriers', 'courriers.categorie_id', '=', 'categorie_courriers.id')
                 ->whereYear('courriers.created_at', $annee)
                 ->select('categorie_courriers.libelle', DB::raw('COUNT(*) as total'))
@@ -322,18 +309,20 @@ class RapportController extends Controller
     public function confidentialite(Request $request)
     {
         try {
+            $user = $request->user();
             $dateDebut = $request->get('date_debut', now()->startOfYear()->toDateString());
             $dateFin = $request->get('date_fin', now()->toDateString());
 
-            $parConfidentialite = DB::table('courriers')
+            $base = Courrier::visiblePour($user)->visibleConfidentialite($user);
+
+            $parConfidentialite = (clone $base)
                 ->whereBetween('date_reception', [$dateDebut, Carbon::parse($dateFin)->endOfDay()])
                 ->select('confidentialite', DB::raw('COUNT(*) as total'))
                 ->groupBy('confidentialite')
                 ->orderByDesc('total')
                 ->get();
 
-            // Courriers très confidentiels par direction
-            $tresConfidentielsParDirection = DB::table('courriers')
+            $tresConfidentielsParDirection = (clone $base)
                 ->join('courrier_affectations', 'courriers.id', '=', 'courrier_affectations.courrier_id')
                 ->join('directions', 'courrier_affectations.direction_id', '=', 'directions.id')
                 ->where('courriers.confidentialite', 'TRES_CONFIDENTIEL')
@@ -343,10 +332,7 @@ class RapportController extends Controller
                 ->get();
 
             return $this->success([
-                'periode' => [
-                    'debut' => $dateDebut,
-                    'fin' => $dateFin,
-                ],
+                'periode' => ['debut' => $dateDebut, 'fin' => $dateFin],
                 'par_confidentialite' => $parConfidentialite,
                 'tres_confidentiels_par_direction' => $tresConfidentielsParDirection,
             ], 'Rapport de confidentialité');
@@ -361,6 +347,7 @@ class RapportController extends Controller
     public function export(Request $request)
     {
         try {
+            $user = $request->user();
             $type = $request->get('type', 'courriers');
             $dateDebut = $request->get('date_debut', now()->startOfMonth()->toDateString());
             $dateFin = $request->get('date_fin', now()->toDateString());
@@ -372,16 +359,16 @@ class RapportController extends Controller
                 'Content-Disposition' => "attachment; filename=\"{$filename}\"",
             ];
 
-            $callback = function () use ($type, $dateDebut, $dateFin) {
+            $callback = function () use ($type, $dateDebut, $dateFin, $user) {
                 $file = fopen('php://output', 'w');
 
-                // BOM UTF-8 pour Excel
                 fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
                 if ($type === 'courriers') {
                     fputcsv($file, ['Numéro', 'Objet', 'Type', 'Priorité', 'Statut', 'Date réception', 'Date limite']);
 
-                    Courrier::with(['typeCourrier', 'priorite', 'statut'])
+                    Courrier::visiblePour($user)->visibleConfidentialite($user)
+                        ->with(['typeCourrier', 'priorite', 'statut'])
                         ->whereBetween('date_reception', [$dateDebut, Carbon::parse($dateFin)->endOfDay()])
                         ->chunk(500, function ($courriers) use ($file) {
                             foreach ($courriers as $c) {
@@ -405,5 +392,13 @@ class RapportController extends Controller
         } catch (\Throwable $e) {
             return $this->error('Erreur lors de l\'export', $e->getMessage(), 500);
         }
+    }
+
+    /**
+     * IDs des courriers visibles par l'utilisateur (périmètre + confidentialité).
+     */
+    private function visibleCourrierIds($user)
+    {
+        return Courrier::visiblePour($user)->visibleConfidentialite($user)->pluck('id');
     }
 }
