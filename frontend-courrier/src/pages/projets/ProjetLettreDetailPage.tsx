@@ -30,7 +30,7 @@ import { telechargerBlob } from '@/lib/lettreFichiers'
 import { useAuthStore } from '@/stores/auth.store'
 import { useConfirm } from '@/stores/confirm.store'
 import { useToast } from '@/stores/toast.store'
-import type { ProjetLettre } from '@/types'
+import type { ProjetLettre, VersionProjetLettre } from '@/types'
 
 type Tab = 'infos' | 'versions' | 'validations' | 'historique'
 
@@ -244,6 +244,19 @@ export function ProjetLettreDetailPage() {
       setError(err instanceof Error ? err.message : 'Erreur lors de la suppression.')
       setBusy(false)
     }
+  }
+
+  const handleSupprimerVersion = async (version: VersionProjetLettre) => {
+    const ok = await confirm({
+      title: 'Supprimer la version',
+      message: `Supprimer la version v${version.numero_version} (${version.nom_fichier_original}) ? Le fichier sera définitivement supprimé.`,
+      confirmLabel: 'Supprimer',
+      tone: 'danger',
+    })
+    if (!ok) return
+    await run(async () => {
+      await projetsLettresService.removeVersion(id!, version.id)
+    }, 'Version supprimée')
   }
 
   const handleAnnuler = async () => {
@@ -468,15 +481,26 @@ export function ProjetLettreDetailPage() {
                       {version.commentaire ? ` • ${version.commentaire}` : ''}
                     </span>
                   </div>
-                  <button
-                    onClick={() =>
-                      void projetsLettresService.downloadVersion(projet.id, version.id, version.nom_fichier_original)
-                    }
-                    className="rounded-md border border-line bg-white p-1.5 text-primary hover:bg-primary/5"
-                    title="Télécharger"
-                  >
-                    <Download className="h-4 w-4" />
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() =>
+                        void projetsLettresService.downloadVersion(projet.id, version.id, version.nom_fichier_original)
+                      }
+                      className="rounded-md border border-line bg-white p-1.5 text-primary hover:bg-primary/5"
+                      title="Télécharger"
+                    >
+                      <Download className="h-4 w-4" />
+                    </button>
+                    {canUpdate && !version.est_version_finale && !terminal && (
+                      <button
+                        onClick={() => void handleSupprimerVersion(version)}
+                        className="rounded-md border border-line bg-white p-1.5 text-danger hover:bg-danger/5"
+                        title="Supprimer la version"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>

@@ -390,6 +390,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware('permission:projets.update');
     Route::get('/projets-lettres/{projetLettre}/versions/{version}/download', [ProjetLettreController::class, 'telechargerVersion'])
         ->middleware('permission:projets.view');
+    Route::delete('/projets-lettres/{projetLettre}/versions/{version}', [ProjetLettreController::class, 'supprimerVersion'])
+        ->middleware('permission:projets.update');
     Route::post('/projets-lettres/{projetLettre}/soumettre', [ProjetLettreController::class, 'soumettre'])
         ->middleware('permission:projets.update');
     Route::post('/projets-lettres/{projetLettre}/decision', [ProjetLettreController::class, 'decision'])

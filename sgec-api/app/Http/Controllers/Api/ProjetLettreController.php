@@ -176,6 +176,34 @@ class ProjetLettreController extends Controller
         }
     }
 
+    public function supprimerVersion(Request $request, ProjetLettre $projetLettre, VersionProjetLettre $version)
+    {
+        try {
+            if ((int) $version->projet_lettre_id !== (int) $projetLettre->id) {
+                return $this->error('Version introuvable pour ce projet.', null, 404);
+            }
+
+            if (in_array($projetLettre->statut, ['SIGNE', 'EXPEDIE', 'ARCHIVE', 'ANNULE'], true)) {
+                return $this->error('Ce projet est verrouillé : impossible de supprimer une version.', null, 409);
+            }
+
+            if ($version->est_version_finale) {
+                return $this->error('La version finale ne peut pas être supprimée.', null, 409);
+            }
+
+            Storage::disk('local')->delete($version->chemin_fichier);
+            $numero = $version->numero_version;
+            $version->delete();
+
+            ProjetLettreService::changerStatut($projetLettre, null, 'version_supprimee', $request->user(), "Version v{$numero} supprimée");
+            AuditLogger::log('projet_lettre.version_supprimee', "Version v{$numero} du projet {$projetLettre->reference_projet} supprimée");
+
+            return $this->success($projetLettre->fresh(self::RELATIONS), 'Version supprimée');
+        } catch (\Throwable $e) {
+            return $this->error('Erreur lors de la suppression de la version', $e->getMessage(), 500);
+        }
+    }
+
     public function soumettre(Request $request, ProjetLettre $projetLettre)
     {
         try {

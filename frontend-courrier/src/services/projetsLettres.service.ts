@@ -42,6 +42,9 @@ export const projetsLettresService = {
     URL.revokeObjectURL(url)
   },
 
+  removeVersion: (id: number | string, versionId: number) =>
+    http.delete<ApiEnvelope<ProjetLettre>>(`/projets-lettres/${id}/versions/${versionId}`),
+
   soumettre: (id: number | string, commentaire?: string) =>
     http.post<ApiEnvelope<ProjetLettre>>(`/projets-lettres/${id}/soumettre`, { commentaire }),
 
