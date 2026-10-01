@@ -14,6 +14,7 @@ import { utilisateursService, rolesService } from '@/services/admin.service'
 import { ApiError } from '@/lib/http'
 import { useDebounce } from '@/lib/useDebounce'
 import { useAuthStore } from '@/stores/auth.store'
+import { useConfirm } from '@/stores/confirm.store'
 import type { Paginated, Role, User } from '@/types'
 
 const PER_PAGE = 15
@@ -30,6 +31,7 @@ const EMPTY_FORM: FormState = { name: '', email: '', password: '', actif: '1', r
 
 export function UtilisateursPage() {
   const hasPermission = useAuthStore((state) => state.hasPermission)
+  const confirm = useConfirm()
   const canCreate = hasPermission('users.create')
   const canUpdate = hasPermission('users.update')
   const canDelete = hasPermission('users.delete')
@@ -124,6 +126,13 @@ export function UtilisateursPage() {
   }
 
   const handleSubmit = async () => {
+    const ok = await confirm({
+      title: editing ? 'Mettre à jour l’utilisateur' : 'Créer l’utilisateur',
+      message: 'Confirmez-vous l’enregistrement de ces informations ?',
+      confirmLabel: editing ? 'Mettre à jour' : 'Créer',
+    })
+    if (!ok) return
+
     setFormError(null)
     setFieldErrors({})
     setSaving(true)

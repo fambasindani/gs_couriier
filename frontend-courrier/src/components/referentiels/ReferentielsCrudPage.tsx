@@ -11,6 +11,7 @@ import { TableBodySkeleton } from '@/components/ui/Skeletons'
 import { ApiError } from '@/lib/http'
 import { useDebounce } from '@/lib/useDebounce'
 import { useAuthStore } from '@/stores/auth.store'
+import { useConfirm } from '@/stores/confirm.store'
 import type { RefConfig } from '@/config/referentiels-crud'
 import type { Paginated } from '@/types'
 
@@ -24,6 +25,7 @@ export function ReferentielsCrudPage<T extends { id: number }>({
   config,
 }: ReferentielsCrudPageProps<T>) {
   const hasPermission = useAuthStore((state) => state.hasPermission)
+  const confirm = useConfirm()
   const canCreate = hasPermission('courriers.create')
   const canUpdate = hasPermission('courriers.update')
   const canDelete = hasPermission('courriers.delete')
@@ -107,6 +109,13 @@ export function ReferentielsCrudPage<T extends { id: number }>({
   }
 
   const handleSubmit = async () => {
+    const ok = await confirm({
+      title: editing ? 'Mettre à jour' : 'Enregistrer',
+      message: 'Confirmez-vous l’enregistrement de ces informations ?',
+      confirmLabel: editing ? 'Mettre à jour' : 'Enregistrer',
+    })
+    if (!ok) return
+
     setFormError(null)
     setFieldErrors({})
     setSaving(true)

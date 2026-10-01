@@ -28,6 +28,7 @@ import { courriersService } from '@/services/courriers.service'
 import { piecesService } from '@/services/pieces.service'
 import { formatDate } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
+import { useConfirm } from '@/stores/confirm.store'
 import type { Courrier, CourrierDetail, CourrierPiece, TimelineItem } from '@/types'
 
 type Tab = 'infos' | 'pieces' | 'workflow' | 'circuit'
@@ -54,6 +55,7 @@ export function CourrierDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const hasPermission = useAuthStore((state) => state.hasPermission)
+  const confirm = useConfirm()
 
   const [courrier, setCourrier] = useState<CourrierDetail | null>(null)
   const [timeline, setTimeline] = useState<TimelineItem[]>([])
@@ -142,6 +144,8 @@ export function CourrierDetailPage() {
     [hasPermission],
   )
 
+  const isArchived = courrier?.statut?.code === 'ARCHIVE'
+
   const refresh = () => setReloadKey((value) => value + 1)
 
   const handleArchive = async () => {
@@ -156,16 +160,42 @@ export function CourrierDetailPage() {
     }
   }
 
-  const handleLink = async (parentId: number) => {
+  const handleLink = async (parent: Courrier) => {
     if (!courrier) return
+    const ok = await confirm({
+      title: 'Lier le courrier',
+      message: (
+        <>
+          Lier <span className="font-semibold text-ink">{courrier.numero}</span> au courrier parent{' '}
+          <span className="font-semibold text-ink">{parent.numero}</span> ?
+        </>
+      ),
+      confirmLabel: 'Lier',
+    })
+    if (!ok) return
+
     setActionError(null)
     try {
-      await courriersService.lier(courrier.id, parentId)
+      await courriersService.lier(courrier.id, parent.id)
       setLinkOpen(false)
       setLinkQuery('')
       refresh()
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Erreur lors de la liaison.')
+    }
+  }
+
+  const handleDownload = async (piece: CourrierPiece) => {
+    const ok = await confirm({
+      title: 'Télécharger la pièce',
+      message: `Télécharger « ${piece.nom_original} » ?`,
+      confirmLabel: 'Télécharger',
+    })
+    if (!ok) return
+    try {
+      await piecesService.download(piece.id, piece.nom_original)
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Erreur lors du téléchargement.')
     }
   }
 
@@ -263,14 +293,14 @@ export function CourrierDetailPage() {
                 Retour
               </Button>
             </Link>
-            {actions.modifier && (
+            {actions.modifier && !isArchived && (
               <Link to={`/courriers/${courrier.id}/modifier`}>
                 <Button variant="outline" icon={<Pencil className="h-4 w-4" />}>
                   Modifier
                 </Button>
               </Link>
             )}
-            {actions.modifier && (
+            {actions.modifier && !isArchived && (
               <Button
                 variant="outline"
                 icon={<Archive className="h-4 w-4" />}
@@ -295,6 +325,13 @@ export function CourrierDetailPage() {
       {actionError && (
         <div className="mb-4 rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-[0.85rem] text-danger">
           {actionError}
+        </div>
+      )}
+
+      {isArchived && (
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-warning/20 bg-warning/5 px-4 py-3 text-[0.85rem] text-warning">
+          <Archive className="h-4 w-4 flex-shrink-0" />
+          Ce courrier est archivé : il ne peut plus être modifié ni archivé à nouveau.
         </div>
       )}
 
@@ -409,7 +446,7 @@ export function CourrierDetailPage() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <button
-                      onClick={() => void piecesService.download(piece.id, piece.nom_original)}
+                      onClick={() => void handleDownload(piece)}
                       className="rounded-md border border-line bg-white p-1.5 text-primary hover:bg-primary/5"
                       title="Télécharger"
                     >
@@ -607,7 +644,7 @@ export function CourrierDetailPage() {
           {linkResults.map((item) => (
             <li key={item.id}>
               <button
-                onClick={() => handleLink(item.id)}
+                onClick={() => void handleLink(item)}
                 className="flex w-full items-center justify-between gap-2 py-2.5 text-left hover:bg-slate-50"
               >
                 <span>

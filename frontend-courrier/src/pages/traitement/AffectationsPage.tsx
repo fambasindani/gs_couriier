@@ -16,6 +16,7 @@ import { affectationsService } from '@/services/traitement.service'
 import { organisationService } from '@/services/organisation.service'
 import { formatDate } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
+import { useConfirm } from '@/stores/confirm.store'
 import type { Courrier, CourrierAffectation, Paginated, UniteStructure, User } from '@/types'
 
 const PER_PAGE = 15
@@ -61,6 +62,7 @@ function cibleLabel(item: CourrierAffectation): string {
 
 export function AffectationsPage() {
   const hasPermission = useAuthStore((state) => state.hasPermission)
+  const confirm = useConfirm()
   const canManage = hasPermission('courriers.affecter')
 
   const [statutFilter, setStatutFilter] = useState('')
@@ -162,6 +164,13 @@ export function AffectationsPage() {
     setForm((prev) => ({ ...prev, [key]: value }))
 
   const handleSubmit = async () => {
+    const ok = await confirm({
+      title: editing ? 'Mettre à jour l’affectation' : 'Nouvelle affectation',
+      message: 'Confirmez-vous l’enregistrement de cette affectation ?',
+      confirmLabel: editing ? 'Mettre à jour' : 'Enregistrer',
+    })
+    if (!ok) return
+
     setFormError(null)
     if (!editing && !form.courrier) {
       setFormError('Sélectionnez un courrier.')

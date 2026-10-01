@@ -8,6 +8,7 @@ import { Field, Input, Select, Textarea } from '@/components/ui/Field'
 import { courriersService, type CourrierPayload } from '@/services/courriers.service'
 import { ApiError } from '@/lib/http'
 import { useReferentiels } from '@/hooks/useReferentiels'
+import { useConfirm } from '@/stores/confirm.store'
 import type { CourrierDetail } from '@/types'
 
 interface FormState {
@@ -71,12 +72,14 @@ export function CourrierFormPage() {
   const isEdit = Boolean(id)
   const navigate = useNavigate()
   const referentiels = useReferentiels()
+  const confirm = useConfirm()
 
   const [form, setForm] = useState<FormState>(EMPTY)
   const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
+  const [archived, setArchived] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -105,6 +108,7 @@ export function CourrierFormPage() {
           nombre_pages: courrier.nombre_pages ? String(courrier.nombre_pages) : '',
           observation: courrier.observation ?? '',
         })
+        setArchived(courrier.statut?.code === 'ARCHIVE')
       })
       .catch((err) => {
         if (active) setError(err instanceof Error ? err.message : 'Erreur de chargement.')
@@ -146,6 +150,12 @@ export function CourrierFormPage() {
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
+    const ok = await confirm({
+      title: isEdit ? 'Mettre à jour le courrier' : 'Enregistrer le courrier',
+      message: 'Confirmez-vous l’enregistrement de ces informations ?',
+      confirmLabel: isEdit ? 'Mettre à jour' : 'Enregistrer',
+    })
+    if (!ok) return
     setSaving(true)
     setError(null)
     setFieldErrors({})
@@ -190,6 +200,12 @@ export function CourrierFormPage() {
       {error && Object.keys(fieldErrors).length === 0 && (
         <div className="mb-4 flex items-center gap-2 rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-[0.85rem] text-danger">
           <AlertTriangle className="h-4 w-4" /> {error}
+        </div>
+      )}
+
+      {archived && (
+        <div className="mb-4 rounded-xl border border-warning/20 bg-warning/5 px-4 py-3 text-[0.85rem] text-warning">
+          Ce courrier est archivé : les modifications sont désactivées.
         </div>
       )}
 
@@ -383,7 +399,11 @@ export function CourrierFormPage() {
               Annuler
             </Button>
           </Link>
-          <Button type="submit" disabled={saving} icon={<Save className="h-4 w-4" />}>
+          <Button
+            type="submit"
+            disabled={saving || archived}
+            icon={<Save className="h-4 w-4" />}
+          >
             {saving ? 'Enregistrement…' : isEdit ? 'Mettre à jour' : 'Enregistrer'}
           </Button>
         </div>

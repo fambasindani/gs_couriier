@@ -9,10 +9,12 @@ import { authService } from '@/services/auth.service'
 import { ApiError } from '@/lib/http'
 import { initials } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
+import { useConfirm } from '@/stores/confirm.store'
 
 export function ProfilPage() {
   const user = useAuthStore((state) => state.user)
   const setUser = useAuthStore((state) => state.setUser)
+  const confirm = useConfirm()
 
   // Formulaire informations
   const [info, setInfo] = useState({ name: user?.name ?? '', email: user?.email ?? '' })
@@ -30,6 +32,12 @@ export function ProfilPage() {
 
   const handleInfoSubmit = async (event: FormEvent) => {
     event.preventDefault()
+    const ok = await confirm({
+      title: 'Mettre à jour le profil',
+      message: 'Confirmez-vous la modification de vos informations personnelles ?',
+      confirmLabel: 'Enregistrer',
+    })
+    if (!ok) return
     setInfoSaving(true)
     setInfoError(null)
     setInfoSuccess(false)
@@ -54,6 +62,12 @@ export function ProfilPage() {
 
   const handlePasswordSubmit = async (event: FormEvent) => {
     event.preventDefault()
+    const ok = await confirm({
+      title: 'Modifier le mot de passe',
+      message: 'Confirmez-vous la modification de votre mot de passe ?',
+      confirmLabel: 'Modifier',
+    })
+    if (!ok) return
     setPwdSaving(true)
     setPwdError(null)
     setPwdSuccess(false)

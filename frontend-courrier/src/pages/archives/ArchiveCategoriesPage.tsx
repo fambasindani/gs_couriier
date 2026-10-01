@@ -11,10 +11,12 @@ import { archiveCategoriesService } from '@/services/archives.service'
 import { ApiError } from '@/lib/http'
 import { useDebounce } from '@/lib/useDebounce'
 import { useAuthStore } from '@/stores/auth.store'
+import { useConfirm } from '@/stores/confirm.store'
 import type { ArchiveCategory } from '@/types'
 
 export function ArchiveCategoriesPage() {
   const hasPermission = useAuthStore((state) => state.hasPermission)
+  const confirm = useConfirm()
   const canCreate = hasPermission('courriers.create')
   const canUpdate = hasPermission('courriers.update')
   const canDelete = hasPermission('courriers.delete')
@@ -75,6 +77,13 @@ export function ArchiveCategoriesPage() {
   }
 
   const handleSubmit = async () => {
+    const ok = await confirm({
+      title: editing ? 'Mettre à jour la catégorie' : 'Créer la catégorie',
+      message: 'Confirmez-vous l’enregistrement de cette catégorie ?',
+      confirmLabel: editing ? 'Mettre à jour' : 'Créer',
+    })
+    if (!ok) return
+
     setFormError(null)
     setFieldErrors({})
     setSaving(true)

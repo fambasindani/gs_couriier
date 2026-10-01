@@ -15,6 +15,7 @@ import { annotationsService } from '@/services/traitement.service'
 import { ApiError } from '@/lib/http'
 import { formatDate } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
+import { useConfirm } from '@/stores/confirm.store'
 import type { Courrier, CourrierAnnotation, Paginated } from '@/types'
 
 const PER_PAGE = 15
@@ -38,6 +39,7 @@ const EMPTY_FORM: FormState = { courrier: null, annotation: '', date_limite: '',
 
 export function AnnotationsPage() {
   const hasPermission = useAuthStore((state) => state.hasPermission)
+  const confirm = useConfirm()
   const canManage = hasPermission('courriers.annoter')
 
   const [etatFilter, setEtatFilter] = useState('')
@@ -116,6 +118,13 @@ export function AnnotationsPage() {
   }
 
   const handleSubmit = async () => {
+    const ok = await confirm({
+      title: editing ? 'Mettre à jour l’annotation' : 'Nouvelle annotation',
+      message: 'Confirmez-vous l’enregistrement de cette annotation ?',
+      confirmLabel: editing ? 'Mettre à jour' : 'Enregistrer',
+    })
+    if (!ok) return
+
     setFormError(null)
     setFieldErrors({})
     if (!editing && !form.courrier) {

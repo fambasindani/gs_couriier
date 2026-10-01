@@ -12,6 +12,7 @@ import { structureService } from '@/services/admin.service'
 import { ApiError } from '@/lib/http'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
+import { useConfirm } from '@/stores/confirm.store'
 import type { UniteStructure } from '@/types'
 
 type Tab = 'directions' | 'departements' | 'services'
@@ -27,6 +28,7 @@ const LABELS: Record<Entity, string> = {
 
 export function StructurePage() {
   const hasPermission = useAuthStore((state) => state.hasPermission)
+  const confirm = useConfirm()
   const canManage = hasPermission('structure.manage')
   const canView = hasPermission('structure.view')
 
@@ -112,6 +114,13 @@ export function StructurePage() {
   }
 
   const submit = async () => {
+    const ok = await confirm({
+      title: editing ? 'Mettre à jour' : 'Ajouter',
+      message: 'Confirmez-vous l’enregistrement de ces informations ?',
+      confirmLabel: editing ? 'Mettre à jour' : 'Ajouter',
+    })
+    if (!ok) return
+
     setFormError(null)
     setFieldErrors({})
     setSaving(true)

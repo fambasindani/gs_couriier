@@ -16,6 +16,7 @@ import { ApiError } from '@/lib/http'
 import { useDebounce } from '@/lib/useDebounce'
 import { formatDate } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
+import { useConfirm } from '@/stores/confirm.store'
 import type { Archive, ArchiveCategory, ArchiveEmplacement, Courrier, Paginated } from '@/types'
 
 const PER_PAGE = 15
@@ -55,6 +56,7 @@ const EMPTY_FORM: FormState = {
 
 export function ArchivesListePage() {
   const hasPermission = useAuthStore((state) => state.hasPermission)
+  const confirm = useConfirm()
   const canCreate = hasPermission('courriers.create')
   const canUpdate = hasPermission('courriers.update')
   const canDelete = hasPermission('courriers.delete')
@@ -158,6 +160,13 @@ export function ArchivesListePage() {
   }
 
   const handleSubmit = async () => {
+    const ok = await confirm({
+      title: editing ? 'Mettre à jour l’archive' : 'Créer l’archive',
+      message: 'Confirmez-vous l’enregistrement de cette archive ?',
+      confirmLabel: editing ? 'Mettre à jour' : 'Créer',
+    })
+    if (!ok) return
+
     setFormError(null)
     setFieldErrors({})
     if (!form.titre_dossier.trim()) {

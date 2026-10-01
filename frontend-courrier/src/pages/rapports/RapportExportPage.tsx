@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/Button'
 import { Field, Select } from '@/components/ui/Field'
 import { PeriodFilter, firstDayOfMonth, today } from '@/components/rapports/PeriodFilter'
 import { rapportsService } from '@/services/rapports.service'
+import { useConfirm } from '@/stores/confirm.store'
 
 export function RapportExportPage() {
+  const confirm = useConfirm()
   const [debut, setDebut] = useState(firstDayOfMonth())
   const [fin, setFin] = useState(today())
   const [type, setType] = useState('courriers')
@@ -16,6 +18,13 @@ export function RapportExportPage() {
   const [success, setSuccess] = useState(false)
 
   const handleExport = async () => {
+    const ok = await confirm({
+      title: 'Exporter en CSV',
+      message: `Exporter les courriers du ${debut} au ${fin} au format CSV ?`,
+      confirmLabel: 'Exporter',
+    })
+    if (!ok) return
+
     setExporting(true)
     setError(null)
     setSuccess(false)

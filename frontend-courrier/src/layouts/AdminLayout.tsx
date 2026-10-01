@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Topbar } from '@/components/layout/Topbar'
+import { ConfirmHost } from '@/components/ui/ConfirmHost'
 import { useUiStore } from '@/stores/ui.store'
 
 export function AdminLayout() {
@@ -21,6 +22,7 @@ export function AdminLayout() {
           <Outlet />
         </main>
       </div>
+      <ConfirmHost />
     </>
   )
 }

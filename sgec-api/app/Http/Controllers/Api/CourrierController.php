@@ -155,6 +155,10 @@ class CourrierController extends Controller
     public function update(Request $request, Courrier $courrier)
     {
         try {
+            if ($courrier->statut?->code === 'ARCHIVE') {
+                return $this->error('Un courrier archivé ne peut plus être modifié.', null, 409);
+            }
+
             $validated = $request->validate([
                 'reference_externe' => 'nullable|string|max:150',
                 'type_courrier_id' => 'sometimes|exists:type_courriers,id',

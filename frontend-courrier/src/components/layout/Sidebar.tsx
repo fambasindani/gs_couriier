@@ -5,6 +5,7 @@ import { MENU, type MenuGroup } from '@/config/menu'
 import { Icon } from '@/components/ui/Icon'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
+import { useConfirm } from '@/stores/confirm.store'
 import { cn, initials } from '@/lib/utils'
 
 interface SidebarGroupProps {
@@ -97,7 +98,16 @@ export function Sidebar() {
 
   const roleLabel = user?.roles?.[0]?.nom ?? 'Utilisateur'
 
-  const handleLogout = () => {
+  const confirm = useConfirm()
+
+  const handleLogout = async () => {
+    const ok = await confirm({
+      title: 'Déconnexion',
+      message: 'Voulez-vous vraiment vous déconnecter ?',
+      confirmLabel: 'Se déconnecter',
+      tone: 'danger',
+    })
+    if (!ok) return
     logout()
     navigate('/login', { replace: true })
   }

@@ -4,6 +4,7 @@ import { Bell, CheckCheck, Clock, Inbox, LogOut, Menu, Search, Settings, User as
 import { MENU } from '@/config/menu'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
+import { useConfirm } from '@/stores/confirm.store'
 import { initials } from '@/lib/utils'
 
 interface NotificationItem {
@@ -78,7 +79,16 @@ export function Topbar() {
     return location.pathname === '/' ? "Vue d'ensemble" : 'SGEC'
   }, [location.pathname, location.search])
 
-  const handleLogout = () => {
+  const confirm = useConfirm()
+
+  const handleLogout = async () => {
+    const ok = await confirm({
+      title: 'Déconnexion',
+      message: 'Voulez-vous vraiment vous déconnecter ?',
+      confirmLabel: 'Se déconnecter',
+      tone: 'danger',
+    })
+    if (!ok) return
     logout()
     navigate('/login', { replace: true })
   }

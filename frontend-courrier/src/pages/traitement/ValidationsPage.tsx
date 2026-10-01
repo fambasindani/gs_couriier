@@ -15,6 +15,7 @@ import { validationsService } from '@/services/traitement.service'
 import { ApiError } from '@/lib/http'
 import { formatDate } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
+import { useConfirm } from '@/stores/confirm.store'
 import type { Courrier, CourrierValidation, Paginated } from '@/types'
 
 const PER_PAGE = 15
@@ -36,6 +37,7 @@ const EMPTY_FORM: FormState = { courrier: null, decision: 'VALIDE', commentaire:
 
 export function ValidationsPage() {
   const hasPermission = useAuthStore((state) => state.hasPermission)
+  const confirm = useConfirm()
   const canManage = hasPermission('courriers.valider')
 
   const [decisionFilter, setDecisionFilter] = useState('')
@@ -113,6 +115,13 @@ export function ValidationsPage() {
   }
 
   const handleSubmit = async () => {
+    const ok = await confirm({
+      title: editing ? 'Mettre à jour la validation' : 'Nouvelle validation',
+      message: 'Confirmez-vous l’enregistrement de cette validation ?',
+      confirmLabel: editing ? 'Mettre à jour' : 'Enregistrer',
+    })
+    if (!ok) return
+
     setFormError(null)
     setFieldErrors({})
     if (!editing && !form.courrier) {

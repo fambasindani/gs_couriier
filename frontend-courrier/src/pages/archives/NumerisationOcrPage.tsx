@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { TableBodySkeleton } from '@/components/ui/Skeletons'
 import { piecesService } from '@/services/pieces.service'
 import { formatDate } from '@/lib/utils'
+import { useConfirm } from '@/stores/confirm.store'
 import type { CourrierPiece } from '@/types'
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
@@ -28,6 +29,7 @@ function hasOcr(piece: CourrierPiece): boolean {
 }
 
 export function NumerisationOcrPage() {
+  const confirm = useConfirm()
   const [items, setItems] = useState<CourrierPiece[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -81,6 +83,20 @@ export function NumerisationOcrPage() {
       return `${piece.nom_original} ${piece.courrier?.numero ?? ''}`.toLowerCase().includes(term)
     })
   }, [items, search, ocrFilter])
+
+  const handleDownload = async (piece: CourrierPiece) => {
+    const ok = await confirm({
+      title: 'Télécharger la pièce',
+      message: `Télécharger « ${piece.nom_original} » ?`,
+      confirmLabel: 'Télécharger',
+    })
+    if (!ok) return
+    try {
+      await piecesService.download(piece.id, piece.nom_original)
+    } catch {
+      /* silencieux */
+    }
+  }
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / CLIENT_PER_PAGE))
   const pageItems = filtered.slice((page - 1) * CLIENT_PER_PAGE, page * CLIENT_PER_PAGE)
@@ -209,7 +225,7 @@ export function NumerisationOcrPage() {
                           <Eye className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => void piecesService.download(piece.id, piece.nom_original)}
+                          onClick={() => void handleDownload(piece)}
                           className="rounded-md border border-line bg-white p-1.5 text-slate-500 hover:bg-slate-50"
                           title="Télécharger"
                         >

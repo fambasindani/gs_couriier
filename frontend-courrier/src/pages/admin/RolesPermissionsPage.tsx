@@ -13,12 +13,14 @@ import { rolesService, permissionsService } from '@/services/admin.service'
 import { ApiError } from '@/lib/http'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
+import { useConfirm } from '@/stores/confirm.store'
 import type { Permission, Role } from '@/types'
 
 type Tab = 'roles' | 'permissions'
 
 export function RolesPermissionsPage() {
   const hasPermission = useAuthStore((state) => state.hasPermission)
+  const confirm = useConfirm()
   const [tab, setTab] = useState<Tab>('roles')
 
   const [roles, setRoles] = useState<Role[]>([])
@@ -89,6 +91,13 @@ export function RolesPermissionsPage() {
   }
 
   const submitRole = async () => {
+    const ok = await confirm({
+      title: editingRole ? 'Mettre à jour le rôle' : 'Créer le rôle',
+      message: 'Confirmez-vous l’enregistrement de ce rôle ?',
+      confirmLabel: editingRole ? 'Mettre à jour' : 'Créer',
+    })
+    if (!ok) return
+
     setRoleError(null)
     setRoleErrors({})
     setSaving(true)
@@ -129,6 +138,13 @@ export function RolesPermissionsPage() {
   }
 
   const submitPerm = async () => {
+    const ok = await confirm({
+      title: editingPerm ? 'Mettre à jour la permission' : 'Créer la permission',
+      message: 'Confirmez-vous l’enregistrement de cette permission ?',
+      confirmLabel: editingPerm ? 'Mettre à jour' : 'Créer',
+    })
+    if (!ok) return
+
     setPermError(null)
     setPermErrors({})
     setSaving(true)

@@ -13,6 +13,7 @@ import { parametresService } from '@/services/admin.service'
 import { ApiError } from '@/lib/http'
 import { useDebounce } from '@/lib/useDebounce'
 import { useAuthStore } from '@/stores/auth.store'
+import { useConfirm } from '@/stores/confirm.store'
 import type { Paginated, ParametreGeneral } from '@/types'
 
 const PER_PAGE = 20
@@ -35,6 +36,7 @@ const EMPTY_FORM: FormState = { cle: '', valeur: '', type: 'string', groupe: 'ge
 
 export function ParametresPage() {
   const hasPermission = useAuthStore((state) => state.hasPermission)
+  const confirm = useConfirm()
   const canManage = hasPermission('parametres.update')
 
   const [search, setSearch] = useState('')
@@ -105,6 +107,13 @@ export function ParametresPage() {
   }
 
   const handleSubmit = async () => {
+    const ok = await confirm({
+      title: editing ? 'Mettre à jour le paramètre' : 'Créer le paramètre',
+      message: 'Confirmez-vous l’enregistrement de ce paramètre ?',
+      confirmLabel: editing ? 'Mettre à jour' : 'Créer',
+    })
+    if (!ok) return
+
     setFormError(null)
     setFieldErrors({})
     setSaving(true)

@@ -11,10 +11,12 @@ import { archiveEmplacementsService } from '@/services/archives.service'
 import { ApiError } from '@/lib/http'
 import { useDebounce } from '@/lib/useDebounce'
 import { useAuthStore } from '@/stores/auth.store'
+import { useConfirm } from '@/stores/confirm.store'
 import type { ArchiveEmplacement } from '@/types'
 
 export function ArchiveEmplacementsPage() {
   const hasPermission = useAuthStore((state) => state.hasPermission)
+  const confirm = useConfirm()
   const canCreate = hasPermission('courriers.create')
   const canUpdate = hasPermission('courriers.update')
   const canDelete = hasPermission('courriers.delete')
@@ -75,6 +77,13 @@ export function ArchiveEmplacementsPage() {
   }
 
   const handleSubmit = async () => {
+    const ok = await confirm({
+      title: editing ? 'Mettre à jour l’emplacement' : 'Créer l’emplacement',
+      message: 'Confirmez-vous l’enregistrement de cet emplacement ?',
+      confirmLabel: editing ? 'Mettre à jour' : 'Créer',
+    })
+    if (!ok) return
+
     setFormError(null)
     setFieldErrors({})
     setSaving(true)

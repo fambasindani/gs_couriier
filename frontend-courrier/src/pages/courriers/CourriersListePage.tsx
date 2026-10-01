@@ -305,7 +305,7 @@ export function CourriersListePage() {
                         >
                           <Eye className="h-4 w-4" />
                         </Link>
-                        {hasPermission('courriers.update') && (
+                        {hasPermission('courriers.update') && courrier.statut?.code !== 'ARCHIVE' && (
                           <>
                             <Link
                               to={`/courriers/${courrier.id}/modifier`}

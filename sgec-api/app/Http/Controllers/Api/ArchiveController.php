@@ -66,6 +66,13 @@ class ArchiveController extends Controller
                 'observation' => 'nullable|string',
             ]);
 
+            if (! empty($validated['courrier_id'])) {
+                $courrierLie = Courrier::find($validated['courrier_id']);
+                if ($courrierLie && $courrierLie->statut?->code === 'ARCHIVE') {
+                    return $this->error('Ce courrier est déjà archivé.', null, 409);
+                }
+            }
+
             $validated['cote_archive'] = Archive::genererCote();
             $validated['archive_par'] = auth()->id();
             $validated['statut_archive'] = 'ACTIF';
@@ -200,6 +207,10 @@ class ArchiveController extends Controller
     public function archiverCourrier(Request $request, Courrier $courrier)
     {
         try {
+            if ($courrier->statut?->code === 'ARCHIVE') {
+                return $this->error('Ce courrier est déjà archivé.', null, 409);
+            }
+
             $validated = $request->validate([
                 'archive_category_id' => 'nullable|exists:archive_categories,id',
                 'archive_emplacement_id' => 'nullable|exists:archive_emplacements,id',
