@@ -21,13 +21,14 @@ import { Button } from '@/components/ui/Button'
 import { Badge, ConfidentialiteBadge, StatutBadge } from '@/components/ui/Badge'
 import { Field, Input } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { TimelineSkeleton } from '@/components/ui/Skeletons'
 import { courriersService } from '@/services/courriers.service'
 import { piecesService } from '@/services/pieces.service'
 import { formatDate } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
-import type { Courrier, CourrierDetail, TimelineItem } from '@/types'
+import type { Courrier, CourrierDetail, CourrierPiece, TimelineItem } from '@/types'
 
 type Tab = 'infos' | 'pieces' | 'workflow' | 'circuit'
 
@@ -66,6 +67,9 @@ export function CourrierDetailPage() {
   const [archiveOpen, setArchiveOpen] = useState(false)
   const [linkOpen, setLinkOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [unlinkOpen, setUnlinkOpen] = useState(false)
+  const [pieceToDelete, setPieceToDelete] = useState<CourrierPiece | null>(null)
+  const [confirmBusy, setConfirmBusy] = useState(false)
   const [linkQuery, setLinkQuery] = useState('')
   const [linkResults, setLinkResults] = useState<Courrier[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
@@ -168,11 +172,16 @@ export function CourrierDetailPage() {
   const handleUnlink = async () => {
     if (!courrier) return
     setActionError(null)
+    setConfirmBusy(true)
     try {
       await courriersService.delier(courrier.id)
+      setUnlinkOpen(false)
       refresh()
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Erreur lors de la déliaison.')
+      setUnlinkOpen(false)
+    } finally {
+      setConfirmBusy(false)
     }
   }
 
@@ -199,12 +208,19 @@ export function CourrierDetailPage() {
     }
   }
 
-  const handleDeletePiece = async (pieceId: number) => {
+  const handleDeletePiece = async () => {
+    if (!pieceToDelete) return
+    setActionError(null)
+    setConfirmBusy(true)
     try {
-      await piecesService.remove(pieceId)
+      await piecesService.remove(pieceToDelete.id)
+      setPieceToDelete(null)
       refresh()
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Erreur lors de la suppression.')
+      setPieceToDelete(null)
+    } finally {
+      setConfirmBusy(false)
     }
   }
 
@@ -401,7 +417,7 @@ export function CourrierDetailPage() {
                     </button>
                     {actions.modifier && (
                       <button
-                        onClick={() => void handleDeletePiece(piece.id)}
+                        onClick={() => setPieceToDelete(piece)}
                         className="rounded-md border border-line bg-white p-1.5 text-danger hover:bg-danger/5"
                         title="Supprimer"
                       >
@@ -528,7 +544,11 @@ export function CourrierDetailPage() {
               Parent : {courrier.parent.numero}
             </Link>
             {actions.modifier && (
-              <Button variant="ghost" icon={<Unlink className="h-4 w-4" />} onClick={handleUnlink}>
+              <Button
+                variant="ghost"
+                icon={<Unlink className="h-4 w-4" />}
+                onClick={() => setUnlinkOpen(true)}
+              >
                 Délier
               </Button>
             )}
@@ -628,6 +648,38 @@ export function CourrierDetailPage() {
           <span className="font-semibold text-ink">{courrier.numero}</span> ?
         </p>
       </Modal>
+
+      <ConfirmDialog
+        open={unlinkOpen}
+        title="Délier le courrier"
+        confirmLabel="Délier"
+        loading={confirmBusy}
+        message={
+          <>
+            Confirmez-vous la déliaison de <span className="font-semibold text-ink">{courrier.numero}</span>{' '}
+            de son courrier parent ?
+          </>
+        }
+        onConfirm={handleUnlink}
+        onClose={() => setUnlinkOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(pieceToDelete)}
+        title="Supprimer la pièce jointe"
+        tone="danger"
+        confirmLabel="Supprimer"
+        loading={confirmBusy}
+        message={
+          <>
+            Confirmez-vous la suppression de{' '}
+            <span className="font-semibold text-ink">{pieceToDelete?.nom_original}</span> ? Le fichier
+            sera définitivement supprimé.
+          </>
+        }
+        onConfirm={handleDeletePiece}
+        onClose={() => setPieceToDelete(null)}
+      />
     </div>
   )
 }

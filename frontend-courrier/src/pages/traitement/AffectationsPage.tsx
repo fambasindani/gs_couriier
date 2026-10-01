@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge, type BadgeTone } from '@/components/ui/Badge'
 import { Field, Input, Select } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Pagination } from '@/components/ui/Pagination'
 import { TableBodySkeleton } from '@/components/ui/Skeletons'
@@ -195,12 +196,25 @@ export function AffectationsPage() {
     }
   }
 
-  const quickStatut = async (item: CourrierAffectation, statut: string) => {
+  const [pendingAction, setPendingAction] = useState<{
+    item: CourrierAffectation
+    statut: string
+    label: string
+  } | null>(null)
+  const [actionBusy, setActionBusy] = useState(false)
+
+  const confirmAction = async () => {
+    if (!pendingAction) return
+    setActionBusy(true)
     try {
-      await affectationsService.update(item.id, { statut })
+      await affectationsService.update(pendingAction.item.id, { statut: pendingAction.statut })
+      setPendingAction(null)
       refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la mise à jour.')
+      setPendingAction(null)
+    } finally {
+      setActionBusy(false)
     }
   }
 
@@ -312,7 +326,9 @@ export function AffectationsPage() {
                       <div className="inline-flex gap-1.5">
                         {canManage && item.statut === 'AFFECTE' && (
                           <button
-                            onClick={() => void quickStatut(item, 'PRIS_EN_CHARGE')}
+                            onClick={() =>
+                              setPendingAction({ item, statut: 'PRIS_EN_CHARGE', label: 'Prendre en charge' })
+                            }
                             className="rounded-md border border-line bg-white p-1.5 text-info hover:bg-info/5"
                             title="Prendre en charge"
                           >
@@ -321,7 +337,9 @@ export function AffectationsPage() {
                         )}
                         {canManage && item.statut !== 'TRAITE' && item.statut !== 'REJETE' && (
                           <button
-                            onClick={() => void quickStatut(item, 'TRAITE')}
+                            onClick={() =>
+                              setPendingAction({ item, statut: 'TRAITE', label: 'Marquer comme traité' })
+                            }
                             className="rounded-md border border-line bg-white p-1.5 text-success hover:bg-success/5"
                             title="Marquer traité"
                           >
@@ -330,7 +348,7 @@ export function AffectationsPage() {
                         )}
                         {canManage && item.statut !== 'REJETE' && item.statut !== 'TRAITE' && (
                           <button
-                            onClick={() => void quickStatut(item, 'REJETE')}
+                            onClick={() => setPendingAction({ item, statut: 'REJETE', label: 'Rejeter' })}
                             className="rounded-md border border-line bg-white p-1.5 text-danger hover:bg-danger/5"
                             title="Rejeter"
                           >
@@ -493,6 +511,25 @@ export function AffectationsPage() {
           Confirmez-vous la suppression de cette affectation ?
         </p>
       </Modal>
+
+      <ConfirmDialog
+        open={Boolean(pendingAction)}
+        title={pendingAction?.label ?? 'Confirmation'}
+        loading={actionBusy}
+        tone={pendingAction?.statut === 'REJETE' ? 'danger' : 'primary'}
+        confirmLabel={pendingAction?.label}
+        message={
+          <>
+            Confirmez-vous l'action « {pendingAction?.label} » sur le courrier{' '}
+            <span className="font-semibold text-ink">
+              {pendingAction?.item.courrier?.numero ?? '#' + pendingAction?.item.id}
+            </span>{' '}
+            ?
+          </>
+        }
+        onConfirm={confirmAction}
+        onClose={() => setPendingAction(null)}
+      />
     </div>
   )
 }
