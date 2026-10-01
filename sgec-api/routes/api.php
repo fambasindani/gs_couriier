@@ -305,6 +305,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Génération d'un projet de lettre depuis un modèle
     Route::post('/courriers/{courrier}/lettre', [CourrierController::class, 'genererLettre'])
         ->middleware('permission:courriers.view');
+    // (PDF/DOCX générés côté frontend avec @react-pdf/renderer et docx)
 
     // ---- 3️⃣ CRUD génériques (EN DERNIER) ----
     Route::get('/courriers/{courrier}', [CourrierController::class, 'show'])

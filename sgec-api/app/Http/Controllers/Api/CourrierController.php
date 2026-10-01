@@ -336,38 +336,12 @@ class CourrierController extends Controller
             ]);
 
             $modele = LettreModele::findOrFail($validated['lettre_modele_id']);
-
-            $courrier->load(['typeCourrier', 'categorie', 'priorite', 'statut', 'expediteur', 'destinataire']);
-
-            $variables = [
-                'numero' => $courrier->numero,
-                'objet' => $courrier->objet,
-                'reference_externe' => $courrier->reference_externe ?? '',
-                'date_courrier' => optional($courrier->date_courrier)->format('d/m/Y') ?? '',
-                'date_reception' => optional($courrier->date_reception)->format('d/m/Y H:i') ?? '',
-                'date_limite' => optional($courrier->date_limite)->format('d/m/Y H:i') ?? '',
-                'type' => $courrier->typeCourrier?->libelle ?? '',
-                'categorie' => $courrier->categorie?->libelle ?? '',
-                'priorite' => $courrier->priorite?->libelle ?? '',
-                'statut' => $courrier->statut?->libelle ?? '',
-                'confidentialite' => $courrier->confidentialite,
-                'expediteur' => $courrier->expediteur?->nom ?? '',
-                'destinataire' => $courrier->destinataire?->nom ?? '',
-                'date_du_jour' => now()->format('d/m/Y'),
-            ];
-
-            $fusionner = function (?string $texte) use ($variables) {
-                return preg_replace_callback(
-                    '/\{\{\s*([a-z_]+)\s*\}\}/i',
-                    fn ($m) => $variables[strtolower($m[1])] ?? $m[0],
-                    (string) $texte
-                );
-            };
+            $donnees = $this->fusionnerLettre($courrier, $modele);
 
             return $this->success([
                 'modele' => ['id' => $modele->id, 'nom' => $modele->nom],
-                'objet' => $fusionner($modele->objet),
-                'corps' => $fusionner($modele->corps),
+                'objet' => $donnees['objet'],
+                'corps' => $donnees['corps'],
                 'courrier' => ['id' => $courrier->id, 'numero' => $courrier->numero],
             ], 'Lettre générée');
         } catch (ValidationException $e) {
@@ -375,6 +349,46 @@ class CourrierController extends Controller
         } catch (\Throwable $e) {
             return $this->error('Erreur lors de la génération', $e->getMessage(), 500);
         }
+    }
+
+    /**
+     * Construit l'objet et le corps de la lettre en fusionnant les variables {{...}}.
+     *
+     * @return array{objet: string|null, corps: string}
+     */
+    private function fusionnerLettre(Courrier $courrier, LettreModele $modele): array
+    {
+        $courrier->load(['typeCourrier', 'categorie', 'priorite', 'statut', 'expediteur', 'destinataire']);
+
+        $variables = [
+            'numero' => $courrier->numero,
+            'objet' => $courrier->objet,
+            'reference_externe' => $courrier->reference_externe ?? '',
+            'date_courrier' => optional($courrier->date_courrier)->format('d/m/Y') ?? '',
+            'date_reception' => optional($courrier->date_reception)->format('d/m/Y H:i') ?? '',
+            'date_limite' => optional($courrier->date_limite)->format('d/m/Y H:i') ?? '',
+            'type' => $courrier->typeCourrier?->libelle ?? '',
+            'categorie' => $courrier->categorie?->libelle ?? '',
+            'priorite' => $courrier->priorite?->libelle ?? '',
+            'statut' => $courrier->statut?->libelle ?? '',
+            'confidentialite' => $courrier->confidentialite,
+            'expediteur' => $courrier->expediteur?->nom ?? '',
+            'destinataire' => $courrier->destinataire?->nom ?? '',
+            'date_du_jour' => now()->format('d/m/Y'),
+        ];
+
+        $fusionner = function (?string $texte) use ($variables) {
+            return preg_replace_callback(
+                '/\{\{\s*([a-z_]+)\s*\}\}/i',
+                fn ($m) => $variables[strtolower($m[1])] ?? $m[0],
+                (string) $texte
+            );
+        };
+
+        return [
+            'objet' => $modele->objet ? $fusionner($modele->objet) : null,
+            'corps' => $fusionner($modele->corps),
+        ];
     }
 
     // =====================================================================

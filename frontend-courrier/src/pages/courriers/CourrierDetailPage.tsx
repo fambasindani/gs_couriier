@@ -31,6 +31,7 @@ import { TimelineSkeleton } from '@/components/ui/Skeletons'
 import { courriersService } from '@/services/courriers.service'
 import { piecesService } from '@/services/pieces.service'
 import { lettreModelesService } from '@/services/lettres.service'
+import { nomFichierLettre, telechargerBlob } from '@/lib/lettreFichiers'
 import { formatDate } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
 import { useConfirm } from '@/stores/confirm.store'
@@ -91,6 +92,7 @@ export function CourrierDetailPage() {
   const [lettre, setLettre] = useState<LettreGeneree | null>(null)
   const [lettreBusy, setLettreBusy] = useState(false)
   const [lettreError, setLettreError] = useState<string | null>(null)
+  const [exportBusy, setExportBusy] = useState(false)
   const [linkQuery, setLinkQuery] = useState('')
   const [linkResults, setLinkResults] = useState<Courrier[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
@@ -237,6 +239,54 @@ export function CourrierDetailPage() {
       await navigator.clipboard.writeText(texteLettre(lettre))
     } catch {
       /* presse-papiers indisponible */
+    }
+  }
+
+  const handleTelechargerPdf = async () => {
+    if (!lettre || !courrier) return
+    setExportBusy(true)
+    setLettreError(null)
+    try {
+      const { genererLettrePdfBlob } = await import('@/lib/lettrePdf')
+      const blob = await genererLettrePdfBlob(lettre.objet, lettre.corps)
+      telechargerBlob(blob, nomFichierLettre(lettre.objet ?? courrier.numero, 'pdf'))
+    } catch {
+      setLettreError('Erreur lors de la génération du PDF.')
+    } finally {
+      setExportBusy(false)
+    }
+  }
+
+  const handleTelechargerWord = async () => {
+    if (!lettre || !courrier) return
+    setExportBusy(true)
+    setLettreError(null)
+    try {
+      const { genererLettreDocxBlob } = await import('@/lib/lettreDocx')
+      const blob = await genererLettreDocxBlob(lettre.objet, lettre.corps)
+      telechargerBlob(blob, nomFichierLettre(lettre.objet ?? courrier.numero, 'docx'))
+    } catch {
+      setLettreError('Erreur lors de la génération du fichier Word.')
+    } finally {
+      setExportBusy(false)
+    }
+  }
+
+  const handleEnregistrerPiece = async () => {
+    if (!lettre || !courrier) return
+    setExportBusy(true)
+    setLettreError(null)
+    try {
+      const { genererLettrePdfBlob } = await import('@/lib/lettrePdf')
+      const blob = await genererLettrePdfBlob(lettre.objet, lettre.corps)
+      const nom = nomFichierLettre(lettre.objet ?? courrier.numero, 'pdf')
+      const file = new File([blob], nom, { type: 'application/pdf' })
+      await piecesService.upload(courrier.id, file)
+      refresh()
+    } catch (err) {
+      setLettreError(err instanceof Error ? err.message : "Erreur lors de l'enregistrement.")
+    } finally {
+      setExportBusy(false)
     }
   }
 
@@ -842,8 +892,36 @@ export function CourrierDetailPage() {
         footer={
           lettre ? (
             <>
-              <Button variant="outline" icon={<Copy className="h-4 w-4" />} onClick={handleCopyLettre}>
+              <Button
+                variant="outline"
+                icon={<Copy className="h-4 w-4" />}
+                onClick={handleCopyLettre}
+              >
                 Copier
+              </Button>
+              <Button
+                variant="outline"
+                icon={<Download className="h-4 w-4" />}
+                onClick={handleTelechargerPdf}
+                disabled={exportBusy}
+              >
+                PDF
+              </Button>
+              <Button
+                variant="outline"
+                icon={<FileText className="h-4 w-4" />}
+                onClick={handleTelechargerWord}
+                disabled={exportBusy}
+              >
+                Word
+              </Button>
+              <Button
+                variant="outline"
+                icon={<Upload className="h-4 w-4" />}
+                onClick={handleEnregistrerPiece}
+                disabled={exportBusy}
+              >
+                Enregistrer
               </Button>
               <Button icon={<Printer className="h-4 w-4" />} onClick={handlePrintLettre}>
                 Imprimer
