@@ -145,11 +145,11 @@ export function CircuitPage() {
           {/* Timeline complète */}
           <Card className="mt-5 p-5">
             <h6 className="section-title">Parcours complet</h6>
-            {circuit.etapes.length === 0 ? (
+            {(circuit.etapes ?? []).length === 0 ? (
               <p className="text-[0.83rem] text-slate-400">Aucune étape enregistrée.</p>
             ) : (
               <ol className="relative space-y-4 before:absolute before:left-[15px] before:top-2 before:h-[calc(100%-1rem)] before:w-px before:bg-line">
-                {circuit.etapes.map((item) => {
+                {(circuit.etapes ?? []).map((item) => {
                   const meta = eventMeta(item.action)
                   const ItemIcon = meta.icon
                   return (

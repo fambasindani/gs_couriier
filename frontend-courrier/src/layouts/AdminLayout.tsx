@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Topbar } from '@/components/layout/Topbar'
 import { ConfirmHost } from '@/components/ui/ConfirmHost'
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { useUiStore } from '@/stores/ui.store'
 
 export function AdminLayout() {
@@ -19,7 +20,9 @@ export function AdminLayout() {
       <div className="app-content">
         <Topbar />
         <main className="content-pad flex-1 p-6">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
       <ConfirmHost />
