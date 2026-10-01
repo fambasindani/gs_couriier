@@ -128,6 +128,10 @@ export const courriersService = {
     return http.post<ApiEnvelope<unknown>>(`/courriers/${id}/archiver`, payload)
   },
 
+  cloturer(id: number | string) {
+    return http.post<ApiEnvelope<Courrier>>(`/courriers/${id}/cloturer`)
+  },
+
   timeline(id: number | string) {
     return http.get<ApiEnvelope<CourrierTimeline>>(`/courriers/${id}/timeline`)
   },

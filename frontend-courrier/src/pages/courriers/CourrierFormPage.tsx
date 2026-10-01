@@ -9,6 +9,7 @@ import { courriersService, type CourrierPayload } from '@/services/courriers.ser
 import { ApiError } from '@/lib/http'
 import { useReferentiels } from '@/hooks/useReferentiels'
 import { useConfirm } from '@/stores/confirm.store'
+import { transitionsAutorisees } from '@/lib/statuts'
 import type { CourrierDetail } from '@/types'
 
 interface FormState {
@@ -80,6 +81,7 @@ export function CourrierFormPage() {
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
   const [archived, setArchived] = useState(false)
+  const [currentStatutCode, setCurrentStatutCode] = useState<string | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -109,6 +111,7 @@ export function CourrierFormPage() {
           observation: courrier.observation ?? '',
         })
         setArchived(courrier.statut?.code === 'ARCHIVE')
+        setCurrentStatutCode(courrier.statut?.code ?? null)
       })
       .catch((err) => {
         if (active) setError(err instanceof Error ? err.message : 'Erreur de chargement.')
@@ -182,6 +185,15 @@ export function CourrierFormPage() {
   }
 
   const fieldError = (key: keyof FormState) => fieldErrors[key]?.[0]
+
+  // En édition : ne proposer que le statut actuel + les transitions autorisées
+  const statutsDisponibles = referentiels.statuts.filter((item) => {
+    if (!isEdit || !currentStatutCode) return true
+    return (
+      item.code === currentStatutCode ||
+      transitionsAutorisees(currentStatutCode).includes(item.code ?? '')
+    )
+  })
 
   return (
     <div>
@@ -267,7 +279,7 @@ export function CourrierFormPage() {
                   required
                 >
                   <option value="">— Sélectionner —</option>
-                  {referentiels.statuts.map((item) => (
+                  {statutsDisponibles.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.libelle}
                     </option>

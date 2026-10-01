@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   Archive,
+  CheckCheck,
   Download,
   FileText,
   Link2,
@@ -29,6 +30,7 @@ import { piecesService } from '@/services/pieces.service'
 import { formatDate } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
 import { useConfirm } from '@/stores/confirm.store'
+import { transitionsAutorisees } from '@/lib/statuts'
 import type { Courrier, CourrierDetail, CourrierPiece, TimelineItem } from '@/types'
 
 type Tab = 'infos' | 'pieces' | 'workflow' | 'circuit'
@@ -157,6 +159,29 @@ export function CourrierDetailPage() {
       refresh()
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Erreur lors de l'archivage.")
+    }
+  }
+
+  const handleCloturer = async () => {
+    if (!courrier) return
+    const ok = await confirm({
+      title: 'Clôturer le courrier',
+      message: (
+        <>
+          Clôturer <span className="font-semibold text-ink">{courrier.numero}</span> ? Le dossier sera
+          marqué comme clôturé (date de clôture enregistrée).
+        </>
+      ),
+      confirmLabel: 'Clôturer',
+    })
+    if (!ok) return
+
+    setActionError(null)
+    try {
+      await courriersService.cloturer(courrier.id)
+      refresh()
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Erreur lors de la clôture.')
     }
   }
 
@@ -300,6 +325,17 @@ export function CourrierDetailPage() {
                 </Button>
               </Link>
             )}
+            {actions.modifier &&
+              !isArchived &&
+              transitionsAutorisees(courrier.statut?.code).includes('CLOTURE') && (
+                <Button
+                  variant="outline"
+                  icon={<CheckCheck className="h-4 w-4" />}
+                  onClick={handleCloturer}
+                >
+                  Clôturer
+                </Button>
+              )}
             {actions.modifier && !isArchived && (
               <Button
                 variant="outline"

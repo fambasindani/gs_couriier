@@ -285,6 +285,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/courriers/{courrier}/archiver', [ArchiveController::class, 'archiverCourrier'])
         ->middleware('permission:courriers.update');
 
+    // Clôture d'un courrier
+    Route::post('/courriers/{courrier}/cloturer', [CourrierController::class, 'cloturer'])
+        ->middleware('permission:courriers.update');
+
     // ---- 3️⃣ CRUD génériques (EN DERNIER) ----
     Route::get('/courriers/{courrier}', [CourrierController::class, 'show'])
         ->middleware('permission:courriers.view');

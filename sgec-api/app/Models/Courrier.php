@@ -135,6 +135,35 @@ class Courrier extends Model
     }
 
     // =====================================================================
+    // Machine à états des statuts
+    // =====================================================================
+
+    /**
+     * Transitions autorisées d'un statut vers le suivant (par code).
+     */
+    public const TRANSITIONS = [
+        'ENREGISTRE' => ['AFFECTE'],
+        'AFFECTE' => ['EN_COURS', 'REJETE'],
+        'EN_COURS' => ['TRAITE', 'VALIDE', 'REJETE'],
+        'TRAITE' => ['CLOTURE', 'VALIDE'],
+        'VALIDE' => ['CLOTURE', 'TRAITE'],
+        'CLOTURE' => [],
+        'REJETE' => [],
+        'ARCHIVE' => [],
+    ];
+
+    /** @return array<int, string> */
+    public static function transitionsAutorisees(?string $code): array
+    {
+        return self::TRANSITIONS[$code] ?? [];
+    }
+
+    public function transitionAutorisee(string $nouveauCode): bool
+    {
+        return in_array($nouveauCode, self::transitionsAutorisees($this->statut?->code), true);
+    }
+
+    // =====================================================================
     // Périmètre d'accès (directions / confidentialité)
     // =====================================================================
 

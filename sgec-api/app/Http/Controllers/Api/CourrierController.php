@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Helpers\AuditLogger;
 use App\Models\Courrier;
+use App\Models\StatutCourrier;
 use App\Services\CircuitService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -198,6 +199,20 @@ class CourrierController extends Controller
                 $validated['nombre_pages'] = 0;
             }
 
+            // Machine à états : on n'autorise que les transitions définies
+            if (array_key_exists('statut_id', $validated)) {
+                $nouveauStatut = StatutCourrier::find($validated['statut_id']);
+                if ($nouveauStatut
+                    && $nouveauStatut->code !== $courrier->statut?->code
+                    && ! $courrier->transitionAutorisee($nouveauStatut->code)) {
+                    return $this->error(
+                        "Transition de statut non autorisée : {$courrier->statut?->code} → {$nouveauStatut->code}.",
+                        null,
+                        422
+                    );
+                }
+            }
+
             $anciennesValeurs = $courrier->only(array_keys($validated));
             $validated['updated_by'] = auth()->id();
 
@@ -253,6 +268,54 @@ class CourrierController extends Controller
             return $this->success(null, 'Courrier supprimé');
         } catch (\Throwable $e) {
             return $this->error('Erreur lors de la suppression', $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Clôture un courrier (statut CLOTURE + date de clôture).
+     */
+    public function cloturer(Request $request, Courrier $courrier)
+    {
+        try {
+            if (! $courrier->estVisiblePar($request->user())) {
+                return $this->error('Accès refusé à ce courrier.', null, 403);
+            }
+
+            if (in_array($courrier->statut?->code, ['CLOTURE', 'ARCHIVE'], true)) {
+                return $this->error('Ce courrier est déjà clôturé ou archivé.', null, 409);
+            }
+
+            if (! $courrier->transitionAutorisee('CLOTURE')) {
+                return $this->error(
+                    "Impossible de clôturer un courrier au statut {$courrier->statut?->code} (le courrier doit être traité ou validé).",
+                    null,
+                    422
+                );
+            }
+
+            $courrier->update([
+                'statut_id' => StatutCourrier::idParCode('CLOTURE'),
+                'date_cloture' => now(),
+            ]);
+
+            AuditLogger::log(
+                'courrier.cloture',
+                "Courrier {$courrier->numero} clôturé par " . auth()->user()->name
+            );
+
+            CircuitService::etape(
+                $courrier,
+                'courrier.cloture',
+                'Clôture',
+                "Courrier {$courrier->numero} clôturé par " . auth()->user()->name
+            );
+
+            return $this->success(
+                $courrier->fresh(['typeCourrier', 'categorie', 'priorite', 'statut']),
+                'Courrier clôturé'
+            );
+        } catch (\Throwable $e) {
+            return $this->error('Erreur lors de la clôture', $e->getMessage(), 500);
         }
     }
 
