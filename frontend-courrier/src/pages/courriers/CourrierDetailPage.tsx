@@ -248,7 +248,7 @@ export function CourrierDetailPage() {
     setLettreError(null)
     try {
       const { genererLettrePdfBlob } = await import('@/lib/lettrePdf')
-      const blob = await genererLettrePdfBlob(lettre.objet, lettre.corps)
+      const blob = await genererLettrePdfBlob(lettre.objet, lettre.corps, courrier.numero)
       telechargerBlob(blob, nomFichierLettre(lettre.objet ?? courrier.numero, 'pdf'))
     } catch {
       setLettreError('Erreur lors de la génération du PDF.')
@@ -263,7 +263,7 @@ export function CourrierDetailPage() {
     setLettreError(null)
     try {
       const { genererLettreDocxBlob } = await import('@/lib/lettreDocx')
-      const blob = await genererLettreDocxBlob(lettre.objet, lettre.corps)
+      const blob = await genererLettreDocxBlob(lettre.objet, lettre.corps, courrier.numero)
       telechargerBlob(blob, nomFichierLettre(lettre.objet ?? courrier.numero, 'docx'))
     } catch {
       setLettreError('Erreur lors de la génération du fichier Word.')
@@ -278,7 +278,7 @@ export function CourrierDetailPage() {
     setLettreError(null)
     try {
       const { genererLettrePdfBlob } = await import('@/lib/lettrePdf')
-      const blob = await genererLettrePdfBlob(lettre.objet, lettre.corps)
+      const blob = await genererLettrePdfBlob(lettre.objet, lettre.corps, courrier.numero)
       const nom = nomFichierLettre(lettre.objet ?? courrier.numero, 'pdf')
       const file = new File([blob], nom, { type: 'application/pdf' })
       await piecesService.upload(courrier.id, file)
