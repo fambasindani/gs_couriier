@@ -7,6 +7,8 @@ export default defineConfig(({ mode }) => {
   const proxyTarget = env.VITE_PROXY_TARGET || ''
 
   return {
+    // L'application est servi à la racine /courrier/ (ex: totalconceptrdc.org/courrier/).
+    base: '/courrier/',
     plugins: [react()],
     resolve: {
       alias: {

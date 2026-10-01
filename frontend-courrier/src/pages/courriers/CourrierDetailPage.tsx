@@ -318,7 +318,7 @@ export function CourrierDetailPage() {
         type: courrier.type_courrier?.libelle ?? null,
         confidentialite: courrier.confidentialite,
         date_reception: formatDate(courrier.date_reception, true),
-        verifyUrl: `${window.location.origin}/courriers/${courrier.id}`,
+        verifyUrl: `${window.location.origin}/courrier/courriers/${courrier.id}`,
       })
       telechargerBlob(blob, `accuse_reception_${courrier.numero}.pdf`)
       toast('Accusé de réception généré')

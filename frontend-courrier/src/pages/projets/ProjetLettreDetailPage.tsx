@@ -214,7 +214,7 @@ export function ProjetLettreDetailPage() {
         type: ce.type_courrier?.libelle ?? null,
         confidentialite: ce.confidentialite,
         date_reception: formatDate(ce.date_reception, true),
-        verifyUrl: `${window.location.origin}/courriers/${ce.id}`,
+        verifyUrl: `${window.location.origin}/courrier/courriers/${ce.id}`,
       })
       telechargerBlob(blob, `accuse_reception_${ce.numero}.pdf`)
       toast('Accusé de réception généré')

@@ -15,7 +15,7 @@ export default function App() {
   }, [logout, fetchMe])
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/courrier">
       <AppRouter />
     </BrowserRouter>
   )
