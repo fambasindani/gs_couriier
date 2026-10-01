@@ -31,6 +31,8 @@ import { JournalAuditPage } from '@/pages/admin/JournalAuditPage'
 import { ParametresPage } from '@/pages/admin/ParametresPage'
 import { ReferentielsCrudPage } from '@/components/referentiels/ReferentielsCrudPage'
 import { LettreModelesPage } from '@/pages/referentiels/LettreModelesPage'
+import { ProjetsLettresPage } from '@/pages/projets/ProjetsLettresPage'
+import { ProjetLettreDetailPage } from '@/pages/projets/ProjetLettreDetailPage'
 import {
   categoriesConfig,
   destinatairesConfig,
@@ -55,6 +57,7 @@ const IMPLEMENTED_ROUTES = new Set([
   '/traitement/annotations',
   '/traitement/validations',
   '/traitement/circuit',
+  '/projets-lettres',
   '/archives',
   '/archives/ocr',
   '/archives/categories',
@@ -110,6 +113,8 @@ export function AppRouter() {
           <Route path="/traitement/annotations" element={<AnnotationsPage />} />
           <Route path="/traitement/validations" element={<ValidationsPage />} />
           <Route path="/traitement/circuit" element={<CircuitPage />} />
+          <Route path="/projets-lettres" element={<ProjetsLettresPage />} />
+          <Route path="/projets-lettres/:id" element={<ProjetLettreDetailPage />} />
           <Route path="/archives" element={<ArchivesListePage />} />
           <Route path="/archives/categories" element={<ArchiveCategoriesPage />} />
           <Route path="/archives/emplacements" element={<ArchiveEmplacementsPage />} />

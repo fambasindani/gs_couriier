@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RapportController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\LettreModeleController;
+use App\Http\Controllers\Api\ProjetLettreController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -371,6 +372,38 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware('permission:courriers.update');
     Route::delete('/courrier-pieces/{piece}', [CourrierPieceController::class, 'destroy'])
         ->middleware('permission:courriers.delete');
+
+    // =====================================================================
+    // Projets de lettres (Word)
+    // =====================================================================
+    Route::get('/projets-lettres', [ProjetLettreController::class, 'index'])
+        ->middleware('permission:projets.view');
+    Route::post('/projets-lettres', [ProjetLettreController::class, 'store'])
+        ->middleware('permission:projets.create');
+    Route::get('/projets-lettres/{projetLettre}', [ProjetLettreController::class, 'show'])
+        ->middleware('permission:projets.view');
+    Route::put('/projets-lettres/{projetLettre}', [ProjetLettreController::class, 'update'])
+        ->middleware('permission:projets.update');
+    Route::post('/projets-lettres/{projetLettre}/generer-word', [ProjetLettreController::class, 'genererWord'])
+        ->middleware('permission:projets.update');
+    Route::post('/projets-lettres/{projetLettre}/importer', [ProjetLettreController::class, 'importerVersion'])
+        ->middleware('permission:projets.update');
+    Route::get('/projets-lettres/{projetLettre}/versions/{version}/download', [ProjetLettreController::class, 'telechargerVersion'])
+        ->middleware('permission:projets.view');
+    Route::post('/projets-lettres/{projetLettre}/soumettre', [ProjetLettreController::class, 'soumettre'])
+        ->middleware('permission:projets.update');
+    Route::post('/projets-lettres/{projetLettre}/decision', [ProjetLettreController::class, 'decision'])
+        ->middleware('permission:projets.valider');
+    Route::post('/projets-lettres/{projetLettre}/signer', [ProjetLettreController::class, 'signer'])
+        ->middleware('permission:projets.signer');
+    Route::post('/projets-lettres/{projetLettre}/courrier-sortant', [ProjetLettreController::class, 'creerCourrierSortant'])
+        ->middleware('permission:projets.update');
+    Route::post('/projets-lettres/{projetLettre}/expedier', [ProjetLettreController::class, 'expedier'])
+        ->middleware('permission:projets.update');
+    Route::post('/projets-lettres/{projetLettre}/archiver', [ProjetLettreController::class, 'archiver'])
+        ->middleware('permission:projets.update');
+    Route::post('/projets-lettres/{projetLettre}/annuler', [ProjetLettreController::class, 'annuler'])
+        ->middleware('permission:projets.update');
 
     // =====================================================================
     // Notifications (personnalisées par périmètre)

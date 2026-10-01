@@ -440,6 +440,13 @@ export function CourrierDetailPage() {
             <Button variant="outline" icon={<MailPlus className="h-4 w-4" />} onClick={openLettre}>
               Lettre
             </Button>
+            <Button
+              variant="outline"
+              icon={<FileText className="h-4 w-4" />}
+              onClick={() => navigate(`/projets-lettres?courrier_id=${courrier.id}`)}
+            >
+              Projet de lettre
+            </Button>
             {actions.modifier && !isArchived && (
               <Link to={`/courriers/${courrier.id}/modifier`}>
                 <Button variant="outline" icon={<Pencil className="h-4 w-4" />}>

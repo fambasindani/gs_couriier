@@ -44,6 +44,13 @@ class PermissionSeeder extends Seeder
             ['nom' => 'Annoter un courrier',   'slug' => 'courriers.annoter',  'description' => 'Ajouter des annotations à un courrier'],
             ['nom' => 'Valider un courrier',   'slug' => 'courriers.valider',  'description' => 'Viser ou valider un courrier'],
 
+            // Projets de lettres
+            ['nom' => 'Voir les projets de lettres', 'slug' => 'projets.view', 'description' => 'Consulter les projets de lettres'],
+            ['nom' => 'Créer un projet de lettre', 'slug' => 'projets.create', 'description' => 'Créer un projet de lettre'],
+            ['nom' => 'Modifier un projet de lettre', 'slug' => 'projets.update', 'description' => 'Modifier, générer, importer et soumettre un projet de lettre'],
+            ['nom' => 'Valider un projet de lettre', 'slug' => 'projets.valider', 'description' => 'Approuver, demander correction ou rejeter un projet'],
+            ['nom' => 'Signer un projet de lettre', 'slug' => 'projets.signer', 'description' => 'Signer un projet de lettre validé'],
+
             // Audit
             ['nom' => "Voir le journal d'audit", 'slug' => 'audit.view', 'description' => "Consulter le journal d'audit"],
             ['nom' => "Purger le journal d'audit", 'slug' => 'audit.delete', 'description' => "Supprimer des entrées du journal d'audit"],

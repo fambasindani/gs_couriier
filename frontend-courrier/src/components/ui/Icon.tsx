@@ -3,6 +3,7 @@ import {
   BarChart3,
   Circle,
   Database,
+  FileText,
   LayoutDashboard,
   LifeBuoy,
   Mail,
@@ -15,6 +16,7 @@ import {
 const ICONS: Record<string, LucideIcon> = {
   LayoutDashboard,
   Mail,
+  FileText,
   Share2,
   Archive,
   Database,

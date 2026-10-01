@@ -314,6 +314,77 @@ export interface LettreGeneree {
   courrier: { id: number; numero: string }
 }
 
+export interface VersionProjetLettre {
+  id: number
+  projet_lettre_id: number
+  numero_version: number
+  chemin_fichier: string
+  nom_fichier_original: string
+  commentaire?: string | null
+  utilisateur_id?: number | null
+  date_creation?: string | null
+  est_version_finale: boolean
+  utilisateur?: User | null
+  created_at?: string
+}
+
+export interface ValidationProjetLettre {
+  id: number
+  projet_lettre_id: number
+  version_projet_id?: number | null
+  valideur_id?: number | null
+  decision: 'APPROUVE' | 'CORRECTION' | 'REJETE'
+  observation?: string | null
+  date_decision?: string | null
+  niveau_validation: number
+  valideur?: User | null
+  version?: VersionProjetLettre | null
+  created_at?: string
+}
+
+export interface HistoriqueProjetLettre {
+  id: number
+  projet_lettre_id: number
+  utilisateur_id?: number | null
+  action: string
+  ancien_statut?: string | null
+  nouveau_statut?: string | null
+  commentaire?: string | null
+  date_action?: string | null
+  utilisateur?: User | null
+  created_at?: string
+}
+
+export interface ProjetLettre {
+  id: number
+  reference_projet: string
+  courrier_entrant_id?: number | null
+  dossier_id?: number | null
+  objet: string
+  destinataire?: string | null
+  service_redacteur_id?: number | null
+  createur_id: number
+  signataire_id?: number | null
+  statut: string
+  date_creation?: string | null
+  date_soumission?: string | null
+  date_validation?: string | null
+  date_signature?: string | null
+  courrier_sortant_id?: number | null
+  date_expedition?: string | null
+  mode_expedition?: string | null
+  courrier_entrant?: Courrier | null
+  courrier_sortant?: Courrier | null
+  service_redacteur?: UniteStructure | null
+  createur?: User | null
+  signataire?: User | null
+  versions?: VersionProjetLettre[]
+  validations?: ValidationProjetLettre[]
+  historique?: HistoriqueProjetLettre[]
+  created_at?: string
+  updated_at?: string
+}
+
 export interface NotificationItem {
   id: string
   type: 'retard' | 'affectation' | 'courrier' | string

@@ -1,6 +1,7 @@
 export type IconName =
   | 'LayoutDashboard'
   | 'Mail'
+  | 'FileText'
   | 'Share2'
   | 'Archive'
   | 'Database'
@@ -59,6 +60,7 @@ export const MENU: MenuSection[] = [
           { title: 'Courriers en retard', path: '/courriers/en-retard', permission: 'courriers.view' },
           { title: 'Réponses liées', path: '/courriers/lies', permission: 'courriers.view' },
           { title: 'Recherche avancée', path: '/courriers/recherche', permission: 'courriers.view' },
+          { title: 'Projets de lettres', path: '/projets-lettres', permission: 'projets.view' },
         ],
       },
     ],
