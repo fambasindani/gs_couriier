@@ -16,7 +16,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = User::with('roles');
+            $query = User::with(['roles', 'direction', 'departement', 'service']);
 
             if ($request->filled('search')) {
                 $search = $request->search;
@@ -50,6 +50,9 @@ class UserController extends Controller
                 'email' => 'required|email|unique:users,email',
                 'password' => 'required|string|min:8',
                 'actif' => 'boolean',
+                'direction_id' => 'nullable|exists:directions,id',
+                'departement_id' => 'nullable|exists:departements,id',
+                'service_id' => 'nullable|exists:services,id',
                 'roles' => 'array',
                 'roles.*' => 'exists:roles,id',
             ]);
@@ -73,7 +76,10 @@ class UserController extends Controller
     public function show(User $user)
     {
         try {
-            return $this->success($user->load('roles.permissions'), 'Détails utilisateur');
+            return $this->success(
+                $user->load('roles.permissions', 'direction', 'departement', 'service'),
+                'Détails utilisateur'
+            );
         } catch (\Throwable $e) {
             return $this->error('Erreur serveur', $e->getMessage(), 500);
         }
@@ -87,6 +93,9 @@ class UserController extends Controller
                 'email' => 'sometimes|email|unique:users,email,' . $user->id,
                 'password' => 'sometimes|string|min:8',
                 'actif' => 'boolean',
+                'direction_id' => 'nullable|exists:directions,id',
+                'departement_id' => 'nullable|exists:departements,id',
+                'service_id' => 'nullable|exists:services,id',
                 'roles' => 'array',
                 'roles.*' => 'exists:roles,id',
             ]);

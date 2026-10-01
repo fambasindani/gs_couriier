@@ -11,11 +11,12 @@ import { Pagination } from '@/components/ui/Pagination'
 import { TableBodySkeleton } from '@/components/ui/Skeletons'
 import { CheckboxList } from '@/components/ui/CheckboxList'
 import { utilisateursService, rolesService } from '@/services/admin.service'
+import { organisationService } from '@/services/organisation.service'
 import { ApiError } from '@/lib/http'
 import { useDebounce } from '@/lib/useDebounce'
 import { useAuthStore } from '@/stores/auth.store'
 import { useConfirm } from '@/stores/confirm.store'
-import type { Paginated, Role, User } from '@/types'
+import type { Paginated, Role, UniteStructure, User } from '@/types'
 
 const PER_PAGE = 15
 
@@ -24,10 +25,22 @@ interface FormState {
   email: string
   password: string
   actif: string
+  direction_id: string
+  departement_id: string
+  service_id: string
   roles: number[]
 }
 
-const EMPTY_FORM: FormState = { name: '', email: '', password: '', actif: '1', roles: [] }
+const EMPTY_FORM: FormState = {
+  name: '',
+  email: '',
+  password: '',
+  actif: '1',
+  direction_id: '',
+  departement_id: '',
+  service_id: '',
+  roles: [],
+}
 
 export function UtilisateursPage() {
   const hasPermission = useAuthStore((state) => state.hasPermission)
@@ -47,6 +60,11 @@ export function UtilisateursPage() {
   const [reloadKey, setReloadKey] = useState(0)
 
   const [roles, setRoles] = useState<Role[]>([])
+  const [org, setOrg] = useState<{
+    directions: UniteStructure[]
+    departements: UniteStructure[]
+    services: UniteStructure[]
+  }>({ directions: [], departements: [], services: [] })
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<User | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
@@ -57,6 +75,13 @@ export function UtilisateursPage() {
 
   useEffect(() => {
     rolesService.all().then(setRoles).catch(() => undefined)
+    Promise.all([
+      organisationService.directions(),
+      organisationService.departements(),
+      organisationService.services(),
+    ])
+      .then(([directions, departements, services]) => setOrg({ directions, departements, services }))
+      .catch(() => undefined)
   }, [])
 
   useEffect(() => {
@@ -93,6 +118,13 @@ export function UtilisateursPage() {
 
   const refresh = () => setReloadKey((value) => value + 1)
 
+  const filteredDepartements = org.departements.filter(
+    (item) => !form.direction_id || String(item.direction_id) === form.direction_id,
+  )
+  const filteredServices = org.services.filter(
+    (item) => !form.departement_id || String(item.departement_id) === form.departement_id,
+  )
+
   const openCreate = () => {
     setEditing(null)
     setForm(EMPTY_FORM)
@@ -108,6 +140,9 @@ export function UtilisateursPage() {
       email: user.email,
       password: '',
       actif: user.actif ? '1' : '0',
+      direction_id: String(user.direction_id ?? user.direction?.id ?? ''),
+      departement_id: String(user.departement_id ?? user.departement?.id ?? ''),
+      service_id: String(user.service_id ?? user.service?.id ?? ''),
       roles: (user.roles ?? []).map((role) => role.id),
     })
     setFormError(null)
@@ -141,6 +176,9 @@ export function UtilisateursPage() {
         name: form.name,
         email: form.email,
         actif: form.actif === '1',
+        direction_id: form.direction_id ? Number(form.direction_id) : null,
+        departement_id: form.departement_id ? Number(form.departement_id) : null,
+        service_id: form.service_id ? Number(form.service_id) : null,
         roles: form.roles,
       }
       if (form.password) payload.password = form.password
@@ -243,19 +281,20 @@ export function UtilisateursPage() {
         <div className="overflow-x-auto">
           <table className="table-custom w-full">
             <thead>
-              <tr>
-                <th>Nom</th>
-                <th>Email</th>
-                <th>Rôles</th>
-                <th>Statut</th>
-                <th className="text-right">Actions</th>
-              </tr>
+                <tr>
+                  <th>Nom</th>
+                  <th>Email</th>
+                  <th>Unité</th>
+                  <th>Rôles</th>
+                  <th>Statut</th>
+                  <th className="text-right">Actions</th>
+                </tr>
             </thead>
             <tbody>
-              {loading && <TableBodySkeleton rows={8} cols={5} />}
+              {loading && <TableBodySkeleton rows={8} cols={6} />}
               {!loading && (data?.data.length ?? 0) === 0 && (
                 <tr>
-                  <td colSpan={5}>
+                  <td colSpan={6}>
                     <EmptyState
                       icon={<Users className="h-6 w-6" />}
                       title="Aucun utilisateur"
@@ -269,6 +308,11 @@ export function UtilisateursPage() {
                   <tr key={user.id}>
                     <td className="font-semibold text-ink">{user.name}</td>
                     <td className="text-slate-600">{user.email}</td>
+                    <td className="text-slate-500">
+                      {[user.direction?.libelle, user.departement?.libelle, user.service?.libelle]
+                        .filter(Boolean)
+                        .join(' › ') || '—'}
+                    </td>
                     <td>
                       <div className="flex flex-wrap gap-1">
                         {(user.roles ?? []).length === 0 ? (
@@ -377,6 +421,49 @@ export function UtilisateursPage() {
               <Select value={form.actif} onChange={(e) => setForm({ ...form, actif: e.target.value })}>
                 <option value="1">Actif</option>
                 <option value="0">Inactif</option>
+              </Select>
+            </Field>
+            <Field label="Direction" error={fieldErrors.direction_id?.[0]}>
+              <Select
+                value={form.direction_id}
+                onChange={(e) =>
+                  setForm({ ...form, direction_id: e.target.value, departement_id: '', service_id: '' })
+                }
+              >
+                <option value="">— Aucune —</option>
+                {org.directions.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.libelle}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Département" error={fieldErrors.departement_id?.[0]}>
+              <Select
+                value={form.departement_id}
+                onChange={(e) =>
+                  setForm({ ...form, departement_id: e.target.value, service_id: '' })
+                }
+              >
+                <option value="">— Aucun —</option>
+                {filteredDepartements.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.libelle}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Service" error={fieldErrors.service_id?.[0]}>
+              <Select
+                value={form.service_id}
+                onChange={(e) => setForm({ ...form, service_id: e.target.value })}
+              >
+                <option value="">— Aucun —</option>
+                {filteredServices.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.libelle}
+                  </option>
+                ))}
               </Select>
             </Field>
           </div>

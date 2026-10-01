@@ -34,6 +34,9 @@ class PermissionSeeder extends Seeder
 
             // Courriers
             ['nom' => 'Voir les courriers',    'slug' => 'courriers.view',     'description' => 'Consulter les courriers'],
+            ['nom' => 'Voir tous les courriers', 'slug' => 'courriers.view.all', 'description' => 'Accéder aux courriers de toutes les directions'],
+            ['nom' => 'Voir les courriers confidentiels', 'slug' => 'courriers.confidentiel.view', 'description' => 'Accéder aux courriers de niveau CONFIDENTIEL'],
+            ['nom' => 'Voir les courriers très confidentiels', 'slug' => 'courriers.tres_confidentiel.view', 'description' => 'Accéder aux courriers de niveau TRES_CONFIDENTIEL'],
             ['nom' => 'Créer un courrier',     'slug' => 'courriers.create',   'description' => 'Enregistrer un nouveau courrier'],
             ['nom' => 'Modifier un courrier',  'slug' => 'courriers.update',   'description' => 'Modifier un courrier'],
             ['nom' => 'Supprimer un courrier', 'slug' => 'courriers.delete',   'description' => 'Supprimer un courrier'],

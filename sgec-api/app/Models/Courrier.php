@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -131,6 +132,92 @@ class Courrier extends Model
         }
 
         return $prefix . str_pad((string) $nouveauNum, 4, '0', STR_PAD_LEFT);
+    }
+
+    // =====================================================================
+    // Périmètre d'accès (directions / confidentialité)
+    // =====================================================================
+
+    /**
+     * Restreint la requête aux courriers visibles par l'utilisateur :
+     * créés par lui, ou affectés à lui / sa direction / son département / son service.
+     * Un utilisateur avec `courriers.view.all` voit tout.
+     */
+    public function scopeVisiblePour(Builder $query, User $user): Builder
+    {
+        if ($user->hasPermission('courriers.view.all')) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $q) use ($user) {
+            $q->where('created_by', $user->id);
+
+            $q->orWhereHas('affectations', function (Builder $a) use ($user) {
+                $a->where('user_id', $user->id);
+
+                if ($user->direction_id) {
+                    $a->orWhere('direction_id', $user->direction_id);
+                }
+                if ($user->departement_id) {
+                    $a->orWhere('departement_id', $user->departement_id);
+                }
+                if ($user->service_id) {
+                    $a->orWhere('service_id', $user->service_id);
+                }
+            });
+        });
+    }
+
+    /**
+     * Filtre selon le niveau de confidentialité autorisé pour l'utilisateur.
+     */
+    public function scopeVisibleConfidentialite(Builder $query, User $user): Builder
+    {
+        if ($user->hasPermission('courriers.tres_confidentiel.view')) {
+            return $query;
+        }
+
+        if ($user->hasPermission('courriers.confidentiel.view')) {
+            return $query->whereIn('confidentialite', ['PUBLIC', 'INTERNE', 'CONFIDENTIEL']);
+        }
+
+        return $query->whereIn('confidentialite', ['PUBLIC', 'INTERNE']);
+    }
+
+    /**
+     * Vérifie qu'un courrier précis est visible par l'utilisateur (confidentialité + périmètre).
+     */
+    public function estVisiblePar(User $user): bool
+    {
+        $niveau = $this->confidentialite;
+
+        if ($niveau === 'TRES_CONFIDENTIEL' && ! $user->hasPermission('courriers.tres_confidentiel.view')) {
+            return false;
+        }
+
+        if ($niveau === 'CONFIDENTIEL'
+            && ! $user->hasPermission('courriers.confidentiel.view')
+            && ! $user->hasPermission('courriers.tres_confidentiel.view')) {
+            return false;
+        }
+
+        if ($user->hasPermission('courriers.view.all') || $this->created_by === $user->id) {
+            return true;
+        }
+
+        return $this->affectations()->where(function (Builder $q) use ($user) {
+            $q->where('user_id', $user->id);
+
+            if ($user->direction_id) {
+                $q->orWhere('direction_id', $user->direction_id);
+            }
+            if ($user->departement_id) {
+                $q->orWhere('departement_id', $user->departement_id);
+            }
+            if ($user->service_id) {
+                $q->orWhere('service_id', $user->service_id);
+            }
+        })->exists();
     }
 
         /**

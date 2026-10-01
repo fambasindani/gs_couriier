@@ -27,6 +27,7 @@ class RoleSeeder extends Seeder
                 'users.view',
                 'courriers.view', 'courriers.create', 'courriers.update',
                 'courriers.affecter', 'courriers.annoter', 'courriers.valider',
+                'courriers.view.all', 'courriers.confidentiel.view', 'courriers.tres_confidentiel.view',
                 'structure.view',
                 'audit.view',
             ])->pluck('id')
@@ -41,6 +42,7 @@ class RoleSeeder extends Seeder
             Permission::whereIn('slug', [
                 'courriers.view', 'courriers.create', 'courriers.update',
                 'courriers.affecter', 'courriers.annoter',
+                'courriers.confidentiel.view',
                 'structure.view',
             ])->pluck('id')
         );

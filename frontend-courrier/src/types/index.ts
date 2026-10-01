@@ -24,7 +24,13 @@ export interface User {
   name: string
   email: string
   actif: boolean
+  direction_id?: number | null
+  departement_id?: number | null
+  service_id?: number | null
   roles: Role[]
+  direction?: UniteStructure | null
+  departement?: UniteStructure | null
+  service?: UniteStructure | null
 }
 
 export interface AuthPayload {

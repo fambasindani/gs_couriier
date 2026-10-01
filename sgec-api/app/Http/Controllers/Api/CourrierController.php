@@ -22,7 +22,7 @@ class CourrierController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Courrier::with([
+            $query = Courrier::visiblePour($request->user())->visibleConfidentialite($request->user())->with([
                 'typeCourrier', 'categorie', 'priorite', 'statut',
                 'expediteur', 'destinataire', 'createur',
             ]);
@@ -138,6 +138,10 @@ class CourrierController extends Controller
     public function show(Courrier $courrier)
     {
         try {
+            if (! $courrier->estVisiblePar(auth()->user())) {
+                return $this->error('Accès refusé à ce courrier.', null, 403);
+            }
+
             return $this->success(
                 $courrier->load([
                     'typeCourrier', 'categorie', 'priorite', 'statut',
@@ -155,6 +159,10 @@ class CourrierController extends Controller
     public function update(Request $request, Courrier $courrier)
     {
         try {
+            if (! $courrier->estVisiblePar($request->user())) {
+                return $this->error('Accès refusé à ce courrier.', null, 403);
+            }
+
             if ($courrier->statut?->code === 'ARCHIVE') {
                 return $this->error('Un courrier archivé ne peut plus être modifié.', null, 409);
             }
@@ -334,7 +342,7 @@ class CourrierController extends Controller
     public function enRetard(Request $request)
     {
         try {
-            $query = Courrier::with([
+            $query = Courrier::visiblePour($request->user())->visibleConfidentialite($request->user())->with([
                 'typeCourrier', 'priorite', 'statut',
                 'expediteur', 'destinataire', 'createur',
             ])
@@ -374,7 +382,7 @@ class CourrierController extends Controller
     public function rechercheAvancee(Request $request)
     {
         try {
-            $query = Courrier::with([
+            $query = Courrier::visiblePour($request->user())->visibleConfidentialite($request->user())->with([
                 'typeCourrier', 'categorie', 'priorite', 'statut',
                 'expediteur', 'destinataire', 'createur',
             ]);
@@ -495,8 +503,11 @@ class CourrierController extends Controller
     public function stats(Request $request)
     {
         try {
-            $total = Courrier::count();
-            $enRetard = Courrier::whereNotNull('date_limite')
+            $user = $request->user();
+            $base = Courrier::visiblePour($user)->visibleConfidentialite($user);
+
+            $total = (clone $base)->count();
+            $enRetard = (clone $base)->whereNotNull('date_limite')
                 ->where('date_limite', '<', now())
                 ->whereDoesntHave('statut', fn ($q) => $q->whereIn('code', ['TRAITE', 'VALIDE', 'CLOTURE', 'REJETE', 'ARCHIVE']))
                 ->count();
@@ -504,12 +515,12 @@ class CourrierController extends Controller
             return $this->success([
                 'total' => $total,
                 'en_retard' => $enRetard,
-                'avec_parent' => Courrier::whereNotNull('courrier_parent_id')->count(),
-                'avec_reponses' => Courrier::has('reponses')->count(),
-                'avec_pieces' => Courrier::has('pieces')->count(),
-                'aujourd_hui' => Courrier::whereDate('created_at', today())->count(),
-                'cette_semaine' => Courrier::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
-                'ce_mois' => Courrier::whereMonth('created_at', now()->month)
+                'avec_parent' => (clone $base)->whereNotNull('courrier_parent_id')->count(),
+                'avec_reponses' => (clone $base)->has('reponses')->count(),
+                'avec_pieces' => (clone $base)->has('pieces')->count(),
+                'aujourd_hui' => (clone $base)->whereDate('created_at', today())->count(),
+                'cette_semaine' => (clone $base)->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+                'ce_mois' => (clone $base)->whereMonth('created_at', now()->month)
                     ->whereYear('created_at', now()->year)
                     ->count(),
             ], 'Statistiques des courriers');
