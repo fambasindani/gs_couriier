@@ -7,6 +7,7 @@ import {
   CheckCheck,
   Copy,
   Download,
+  FileCheck,
   FileText,
   Link2,
   MailPlus,
@@ -93,6 +94,7 @@ export function CourrierDetailPage() {
   const [lettreBusy, setLettreBusy] = useState(false)
   const [lettreError, setLettreError] = useState<string | null>(null)
   const [exportBusy, setExportBusy] = useState(false)
+  const [accuseBusy, setAccuseBusy] = useState(false)
   const [linkQuery, setLinkQuery] = useState('')
   const [linkResults, setLinkResults] = useState<Courrier[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
@@ -290,6 +292,38 @@ export function CourrierDetailPage() {
     }
   }
 
+  const handleAccuse = async () => {
+    if (!courrier) return
+    const ok = await confirm({
+      title: 'Accusé de réception',
+      message: `Générer l'accusé de réception de ${courrier.numero} (PDF avec QR code) ?`,
+      confirmLabel: 'Générer',
+    })
+    if (!ok) return
+
+    setAccuseBusy(true)
+    setActionError(null)
+    try {
+      const { genererAccusePdfBlob } = await import('@/lib/accusePdf')
+      const blob = await genererAccusePdfBlob({
+        numero: courrier.numero,
+        reference_externe: courrier.reference_externe ?? null,
+        objet: courrier.objet,
+        expediteur: courrier.expediteur?.nom ?? null,
+        destinataire: courrier.destinataire?.nom ?? null,
+        type: courrier.type_courrier?.libelle ?? null,
+        confidentialite: courrier.confidentialite,
+        date_reception: formatDate(courrier.date_reception, true),
+        verifyUrl: `${window.location.origin}/courriers/${courrier.id}`,
+      })
+      telechargerBlob(blob, `accuse_reception_${courrier.numero}.pdf`)
+    } catch {
+      setActionError("Erreur lors de la génération de l'accusé de réception.")
+    } finally {
+      setAccuseBusy(false)
+    }
+  }
+
   const handlePrintLettre = () => {
     if (!lettre) return
     const w = window.open('', '_blank', 'width=820,height=920')
@@ -446,6 +480,14 @@ export function CourrierDetailPage() {
               onClick={() => navigate(`/projets-lettres?courrier_id=${courrier.id}`)}
             >
               Projet de lettre
+            </Button>
+            <Button
+              variant="outline"
+              icon={<FileCheck className="h-4 w-4" />}
+              onClick={handleAccuse}
+              disabled={accuseBusy}
+            >
+              Accusé
             </Button>
             {actions.modifier && !isArchived && (
               <Link to={`/courriers/${courrier.id}/modifier`}>
