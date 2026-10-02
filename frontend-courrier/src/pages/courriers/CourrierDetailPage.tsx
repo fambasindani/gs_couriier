@@ -19,6 +19,7 @@ import {
   Unlink,
   Upload,
   User as UserIcon,
+  XCircle,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -31,6 +32,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { TimelineSkeleton } from '@/components/ui/Skeletons'
 import { courriersService } from '@/services/courriers.service'
 import { piecesService } from '@/services/pieces.service'
+import { affectationsService } from '@/services/traitement.service'
 import { lettreModelesService } from '@/services/lettres.service'
 import { nomFichierLettre, telechargerBlob } from '@/lib/lettreFichiers'
 import { formatDate } from '@/lib/utils'
@@ -40,6 +42,7 @@ import { useToast } from '@/stores/toast.store'
 import { transitionsAutorisees } from '@/lib/statuts'
 import type {
   Courrier,
+  CourrierAffectation,
   CourrierDetail,
   CourrierPiece,
   LettreGeneree,
@@ -165,6 +168,8 @@ export function CourrierDetailPage() {
     () => ({
       modifier: hasPermission('courriers.update'),
       supprimer: hasPermission('courriers.delete'),
+      affecter: hasPermission('courriers.affecter'),
+      annuler: hasPermission('courriers.annuler'),
     }),
     [hasPermission],
   )
@@ -205,6 +210,43 @@ export function CourrierDetailPage() {
       refresh()
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Erreur lors de la clôture.')
+    }
+  }
+
+  const handleAnnulerCourrier = async () => {
+    if (!courrier) return
+    const ok = await confirm({
+      title: 'Annuler le courrier',
+      message: `Annuler ${courrier.numero} ? (permission dédiée requise)`,
+      confirmLabel: 'Annuler',
+      tone: 'danger',
+    })
+    if (!ok) return
+    setActionError(null)
+    try {
+      await courriersService.annuler(courrier.id)
+      toast('Courrier annulé')
+      refresh()
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Erreur lors de l’annulation.')
+    }
+  }
+
+  const handleAccuserReception = async (affectation: CourrierAffectation) => {
+    if (!courrier) return
+    const ok = await confirm({
+      title: 'Accuser réception',
+      message: `Confirmer la réception du courrier ${courrier.numero} par votre service ?`,
+      confirmLabel: 'Accuser',
+    })
+    if (!ok) return
+    setActionError(null)
+    try {
+      await affectationsService.accuserReception(affectation.id)
+      toast('Réception accusée')
+      refresh()
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Erreur lors de l’accusé de réception.')
     }
   }
 
@@ -521,6 +563,15 @@ export function CourrierDetailPage() {
                 Archiver
               </Button>
             )}
+            {actions.annuler && courrier.statut?.code !== 'ARCHIVE' && courrier.statut?.code !== 'ANNULE' && (
+              <Button
+                variant="danger"
+                icon={<XCircle className="h-4 w-4" />}
+                onClick={handleAnnulerCourrier}
+              >
+                Annuler
+              </Button>
+            )}
             {actions.supprimer && (
               <Button
                 variant="danger"
@@ -707,6 +758,22 @@ export function CourrierDetailPage() {
                       <span className="mt-0.5 block text-[0.75rem] text-slate-400">
                         Affecté le {formatDate(item.date_affectation, true)}
                         {item.date_limite ? ` • Limite : ${formatDate(item.date_limite, true)}` : ''}
+                      </span>
+                      <span className="mt-1 flex flex-wrap items-center gap-2">
+                        {item.date_accuse_reception ? (
+                          <span className="text-[0.72rem] font-medium text-success">
+                            ✓ Reçu le {formatDate(item.date_accuse_reception, true)}
+                          </span>
+                        ) : (
+                          actions.affecter && (
+                            <button
+                              onClick={() => void handleAccuserReception(item)}
+                              className="rounded border border-success/30 bg-success/10 px-2 py-1 text-[0.72rem] font-semibold text-success hover:bg-success/15"
+                            >
+                              Accuser réception
+                            </button>
+                          )
+                        )}
                       </span>
                     </li>
                   )

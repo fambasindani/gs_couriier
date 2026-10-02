@@ -52,6 +52,7 @@ const STATUT_TONES: Record<string, BadgeTone> = {
   VALIDE: 'success',
   CLOTURE: 'success',
   REJETE: 'danger',
+  ANNULE: 'danger',
   ARCHIVE: 'secondary',
 }
 

@@ -164,6 +164,7 @@ class Courrier extends Model
         'VALIDE' => ['CLOTURE', 'TRAITE'],
         'CLOTURE' => [],
         'REJETE' => [],
+        'ANNULE' => [],
         'ARCHIVE' => [],
     ];
 

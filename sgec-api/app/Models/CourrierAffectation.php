@@ -21,6 +21,7 @@ class CourrierAffectation extends Model
         'date_limite',
         'date_prise_en_charge',
         'date_traitement',
+        'date_accuse_reception',
         'statut',
     ];
 
@@ -29,6 +30,7 @@ class CourrierAffectation extends Model
         'date_limite' => 'datetime',
         'date_prise_en_charge' => 'datetime',
         'date_traitement' => 'datetime',
+        'date_accuse_reception' => 'datetime',
     ];
 
     // =====================================================================

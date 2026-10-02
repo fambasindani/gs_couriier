@@ -26,7 +26,7 @@ class RoleSeeder extends Seeder
             Permission::whereIn('slug', [
                 'users.view',
                 'courriers.view', 'courriers.create', 'courriers.update',
-                'courriers.affecter', 'courriers.annoter', 'courriers.valider',
+                'courriers.affecter', 'courriers.annoter', 'courriers.valider', 'courriers.annuler',
                 'courriers.view.all', 'courriers.confidentiel.view', 'courriers.tres_confidentiel.view',
                 'projets.view', 'projets.create', 'projets.update', 'projets.valider', 'projets.signer',
                 'structure.view',

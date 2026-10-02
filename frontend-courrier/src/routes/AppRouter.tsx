@@ -32,6 +32,7 @@ import { ParametresPage } from '@/pages/admin/ParametresPage'
 import { ReferentielsCrudPage } from '@/components/referentiels/ReferentielsCrudPage'
 import { LettreModelesPage } from '@/pages/referentiels/LettreModelesPage'
 import { ProjetsLettresPage } from '@/pages/projets/ProjetsLettresPage'
+import { PointEncodagePage } from '@/pages/encodage/PointEncodagePage'
 import { ProjetLettreDetailPage } from '@/pages/projets/ProjetLettreDetailPage'
 import {
   categoriesConfig,
@@ -50,6 +51,7 @@ const IMPLEMENTED_ROUTES = new Set([
   '/dashboard/statistiques',
   '/dashboard/activite-recente',
   '/courriers',
+  '/encodage',
   '/courriers/en-retard',
   '/courriers/lies',
   '/courriers/recherche',
@@ -103,6 +105,7 @@ export function AppRouter() {
           <Route path="/dashboard/statistiques" element={<DashboardStatistiquesPage />} />
           <Route path="/dashboard/activite-recente" element={<DashboardActivitePage />} />
           <Route path="/courriers" element={<CourriersListePage />} />
+          <Route path="/encodage" element={<PointEncodagePage />} />
           <Route path="/courriers/en-retard" element={<CourriersRetardPage />} />
           <Route path="/courriers/lies" element={<CourriersLiesPage />} />
           <Route path="/courriers/recherche" element={<RechercheAvanceePage />} />

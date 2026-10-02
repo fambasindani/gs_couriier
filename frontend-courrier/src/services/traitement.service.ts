@@ -42,6 +42,8 @@ export const affectationsService = {
   update: (id: number | string, payload: Partial<AffectationPayload>) =>
     http.put<ApiEnvelope<CourrierAffectation>>(`/courrier-affectations/${id}`, payload),
   remove: (id: number | string) => http.delete<ApiEnvelope<null>>(`/courrier-affectations/${id}`),
+  accuserReception: (id: number | string) =>
+    http.post<ApiEnvelope<CourrierAffectation>>(`/courrier-affectations/${id}/accuser-reception`),
 }
 
 export const annotationsService = {

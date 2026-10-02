@@ -198,6 +198,48 @@ class CourrierAffectationController extends Controller
         }
     }
 
+    /**
+     * Accusé de réception transversal (ex : DANTIC -> RH).
+     * Le service destinataire confirme la réception ; l'émetteur voit l'info en temps réel.
+     */
+    public function accuserReception(Request $request, CourrierAffectation $affectation)
+    {
+        try {
+            if (! $affectation->courrier?->estVisiblePar($request->user())) {
+                return $this->error('Accès refusé à cette affectation.', null, 403);
+            }
+
+            if ($affectation->date_accuse_reception) {
+                return $this->error('Réception déjà accusée.', null, 409);
+            }
+
+            $affectation->update(['date_accuse_reception' => now()]);
+
+            AuditLogger::log(
+                'courrier.accuse_reception',
+                "Réception accusée pour le courrier {$affectation->courrier?->numero} par " . auth()->user()->name
+            );
+
+            if ($affectation->courrier) {
+                CircuitService::etape(
+                    $affectation->courrier,
+                    'courrier.accuse_reception',
+                    'Accusé de réception',
+                    "Réception du courrier accusée par " . auth()->user()->name,
+                    null,
+                    ['affectation_id' => $affectation->id]
+                );
+            }
+
+            return $this->success(
+                $affectation->fresh(['courrier', 'direction', 'departement', 'service', 'user', 'affectePar']),
+                'Réception accusée'
+            );
+        } catch (\Throwable $e) {
+            return $this->error('Erreur lors de l’accusé de réception', $e->getMessage(), 500);
+        }
+    }
+
     public function destroy(CourrierAffectation $affectation)
     {
         try {

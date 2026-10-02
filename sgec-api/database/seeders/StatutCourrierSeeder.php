@@ -18,6 +18,7 @@ class StatutCourrierSeeder extends Seeder
             ['code' => 'CLOTURE',    'libelle' => 'Clôturé',    'description' => 'Courrier clôturé'],
             ['code' => 'REJETE',     'libelle' => 'Rejeté',     'description' => 'Courrier rejeté'],
             ['code' => 'ARCHIVE',    'libelle' => 'Archivé',    'description' => 'Courrier archivé'],
+            ['code' => 'ANNULE',     'libelle' => 'Annulé',     'description' => 'Courrier annulé'],
         ];
 
         foreach ($statuts as $statut) {

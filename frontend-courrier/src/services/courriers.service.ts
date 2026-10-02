@@ -133,6 +133,10 @@ export const courriersService = {
     return http.post<ApiEnvelope<Courrier>>(`/courriers/${id}/cloturer`)
   },
 
+  annuler(id: number | string) {
+    return http.post<ApiEnvelope<Courrier>>(`/courriers/${id}/annuler`)
+  },
+
   genererLettre(id: number | string, lettreModeleId: number) {
     return http.post<ApiEnvelope<LettreGeneree>>(`/courriers/${id}/lettre`, {
       lettre_modele_id: lettreModeleId,

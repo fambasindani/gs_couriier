@@ -41,6 +41,7 @@ class PermissionSeeder extends Seeder
             ['nom' => 'Modifier un courrier',  'slug' => 'courriers.update',   'description' => 'Modifier un courrier'],
             ['nom' => 'Supprimer un courrier', 'slug' => 'courriers.delete',   'description' => 'Supprimer un courrier'],
             ['nom' => 'Affecter un courrier',  'slug' => 'courriers.affecter', 'description' => 'Affecter un courrier à un service/utilisateur'],
+            ['nom' => 'Annuler un courrier',  'slug' => 'courriers.annuler', 'description' => 'Annuler un courrier (permission dédiée)'],
             ['nom' => 'Annoter un courrier',   'slug' => 'courriers.annoter',  'description' => 'Ajouter des annotations à un courrier'],
             ['nom' => 'Valider un courrier',   'slug' => 'courriers.valider',  'description' => 'Viser ou valider un courrier'],
 

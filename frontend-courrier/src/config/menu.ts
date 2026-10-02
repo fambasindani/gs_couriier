@@ -58,6 +58,7 @@ export const MENU: MenuSection[] = [
           { title: 'Courrier externe sortant', path: '/courriers?type=SORTANT', permission: 'courriers.view' },
           { title: 'Courrier interne entrant', path: '/courriers?type=INT_ENTRANT', permission: 'courriers.view' },
           { title: 'Courrier interne sortant', path: '/courriers?type=INT_SORTANT', permission: 'courriers.view' },
+          { title: "Point d'encodage", path: '/encodage', permission: 'courriers.create' },
           { title: 'Courriers en retard', path: '/courriers/en-retard', permission: 'courriers.view' },
           { title: 'Réponses liées', path: '/courriers/lies', permission: 'courriers.view' },
           { title: 'Recherche avancée', path: '/courriers/recherche', permission: 'courriers.view' },

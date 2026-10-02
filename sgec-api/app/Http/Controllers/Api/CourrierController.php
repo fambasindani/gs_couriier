@@ -280,6 +280,37 @@ class CourrierController extends Controller
     }
 
     /**
+     * Annule un courrier (permission dédiée courriers.annuler).
+     */
+    public function annuler(Request $request, Courrier $courrier)
+    {
+        try {
+            if (! $courrier->estVisiblePar($request->user())) {
+                return $this->error('Accès refusé à ce courrier.', null, 403);
+            }
+
+            if (in_array($courrier->statut?->code, ['ARCHIVE', 'ANNULE'], true)) {
+                return $this->error('Ce courrier est déjà annulé ou archivé.', null, 409);
+            }
+
+            $courrier->update(['statut_id' => StatutCourrier::idParCode('ANNULE')]);
+
+            AuditLogger::log('courrier.annule', "Courrier {$courrier->numero} annulé par " . auth()->user()->name);
+
+            CircuitService::etape(
+                $courrier,
+                'courrier.annule',
+                'Annulation',
+                "Courrier {$courrier->numero} annulé par " . auth()->user()->name
+            );
+
+            return $this->success($courrier->fresh(['typeCourrier', 'categorie', 'priorite', 'statut']), 'Courrier annulé');
+        } catch (\Throwable $e) {
+            return $this->error('Erreur lors de l’annulation', $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * Clôture un courrier (statut CLOTURE + date de clôture).
      */
     public function cloturer(Request $request, Courrier $courrier)

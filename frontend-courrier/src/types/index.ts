@@ -186,6 +186,7 @@ export interface CourrierAffectation {
   date_limite?: string | null
   date_prise_en_charge?: string | null
   date_traitement?: string | null
+  date_accuse_reception?: string | null
   statut: 'AFFECTE' | 'PRIS_EN_CHARGE' | 'EN_TRAITEMENT' | 'TRAITE' | 'REJETE'
 }
 

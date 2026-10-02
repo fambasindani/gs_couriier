@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { AlertTriangle, ArrowRight, Ban, CheckCheck, Pencil, Plus, Share2, Trash2 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -14,9 +14,11 @@ import { TableBodySkeleton } from '@/components/ui/Skeletons'
 import { CourrierPicker } from '@/components/courriers/CourrierPicker'
 import { affectationsService } from '@/services/traitement.service'
 import { organisationService } from '@/services/organisation.service'
+import { courriersService } from '@/services/courriers.service'
 import { formatDate } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
 import { useConfirm } from '@/stores/confirm.store'
+import { useToast } from '@/stores/toast.store'
 import type { Courrier, CourrierAffectation, Paginated, UniteStructure, User } from '@/types'
 
 const PER_PAGE = 15
@@ -63,6 +65,8 @@ function cibleLabel(item: CourrierAffectation): string {
 export function AffectationsPage() {
   const hasPermission = useAuthStore((state) => state.hasPermission)
   const confirm = useConfirm()
+  const toast = useToast()
+  const [searchParams, setSearchParams] = useSearchParams()
   const canManage = hasPermission('courriers.affecter')
 
   const [statutFilter, setStatutFilter] = useState('')
@@ -143,6 +147,36 @@ export function AffectationsPage() {
     setForm(EMPTY_FORM)
     setFormError(null)
     setFormOpen(true)
+  }
+
+  // Pré-remplissage depuis /traitement/affectations?courrier_id=X (point d'encodage)
+  useEffect(() => {
+    const id = searchParams.get('courrier_id')
+    if (!id) return
+    courriersService
+      .show(id)
+      .then((res) => {
+        openCreate()
+        setForm((prev) => ({ ...prev, courrier: res.data }))
+        setSearchParams({}, { replace: true })
+      })
+      .catch(() => undefined)
+  }, [searchParams, setSearchParams, openCreate])
+
+  const handleAccuser = async (item: CourrierAffectation) => {
+    const ok = await confirm({
+      title: 'Accuser réception',
+      message: `Confirmer la réception du courrier ${item.courrier?.numero ?? ''} par votre service ?`,
+      confirmLabel: 'Accuser',
+    })
+    if (!ok) return
+    try {
+      await affectationsService.accuserReception(item.id)
+      toast('Réception accusée')
+      refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de l’accusé de réception.')
+    }
   }
 
   const openEdit = (item: CourrierAffectation) => {
@@ -326,13 +360,29 @@ export function AffectationsPage() {
                     </td>
                     <td>{cibleLabel(item)}</td>
                     <td>{item.affecte_par?.name ?? '—'}</td>
-                    <td>{formatDate(item.date_affectation, true)}</td>
+                    <td>
+                      {formatDate(item.date_affectation, true)}
+                      {item.date_accuse_reception && (
+                        <span className="mt-0.5 block text-[0.72rem] font-medium text-success">
+                          ✓ Reçu le {formatDate(item.date_accuse_reception, true)}
+                        </span>
+                      )}
+                    </td>
                     <td>{formatDate(item.date_limite, true)}</td>
                     <td>
                       <Badge tone={TONES[item.statut] ?? 'secondary'}>{item.statut}</Badge>
                     </td>
                     <td className="text-right">
                       <div className="inline-flex gap-1.5">
+                        {canManage && !item.date_accuse_reception && (
+                          <button
+                            onClick={() => void handleAccuser(item)}
+                            className="rounded-md border border-line bg-white p-1.5 text-success hover:bg-success/5"
+                            title="Accuser réception"
+                          >
+                            <CheckCheck className="h-4 w-4" />
+                          </button>
+                        )}
                         {canManage && item.statut === 'AFFECTE' && (
                           <button
                             onClick={() =>

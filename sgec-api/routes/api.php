@@ -303,6 +303,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/courriers/{courrier}/cloturer', [CourrierController::class, 'cloturer'])
         ->middleware('permission:courriers.update');
 
+    // Annulation d'un courrier (permission dédiée)
+    Route::post('/courriers/{courrier}/annuler', [CourrierController::class, 'annuler'])
+        ->middleware('permission:courriers.annuler');
+
     // Génération d'un projet de lettre depuis un modèle
     Route::post('/courriers/{courrier}/lettre', [CourrierController::class, 'genererLettre'])
         ->middleware('permission:courriers.view');
@@ -331,6 +335,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/courrier-affectations/{affectation}', [CourrierAffectationController::class, 'update'])
         ->middleware('permission:courriers.affecter');
     Route::delete('/courrier-affectations/{affectation}', [CourrierAffectationController::class, 'destroy'])
+        ->middleware('permission:courriers.affecter');
+    Route::post('/courrier-affectations/{affectation}/accuser-reception', [CourrierAffectationController::class, 'accuserReception'])
         ->middleware('permission:courriers.affecter');
 
     // Annotations
