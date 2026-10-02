@@ -308,7 +308,7 @@ class ProjetLettreController extends Controller
             $typeSortant = TypeCourrier::where('code', 'SORTANT')->value('id');
 
             $courrier = Courrier::create([
-                'numero' => Courrier::genererNumero(),
+                'numero' => Courrier::genererNumero('SORTANT'),
                 'reference_externe' => $projetLettre->reference_projet,
                 'type_courrier_id' => $typeSortant,
                 'priorite_id' => \App\Models\Priorite::where('code', 'NORMALE')->value('id') ?? \App\Models\Priorite::value('id'),

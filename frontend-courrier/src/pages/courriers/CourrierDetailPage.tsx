@@ -716,9 +716,9 @@ export function CourrierDetailPage() {
           </Card>
 
           <Card className="p-5">
-            <h6 className="section-title">Annotations ({(courrier.annotations ?? []).length})</h6>
+            <h6 className="section-title">Instructions ({(courrier.annotations ?? []).length})</h6>
             {(courrier.annotations ?? []).length === 0 ? (
-              <p className="text-[0.83rem] text-slate-400">Aucune annotation.</p>
+              <p className="text-[0.83rem] text-slate-400">Aucune instruction.</p>
             ) : (
               <ul className="space-y-3">
                 {(courrier.annotations ?? []).map((item) => (

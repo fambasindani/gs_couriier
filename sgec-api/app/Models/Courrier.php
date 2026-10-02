@@ -114,14 +114,29 @@ class Courrier extends Model
     /**
      * Génère un numéro unique : COUR-2026-0001
      */
-    public static function genererNumero(): string
+    /**
+     * Génère le matricule du courrier selon son type.
+     *  - Externe : EE-AAAA-0001 (entrant), ES-AAAA-0001 (sortant)
+     *  - Interne : {PREFIX}-IE-AAAA-0001 / {PREFIX}-IS-AAAA-0001
+     *              (préfixe = code de la direction émettrice)
+     */
+    public static function genererNumero(?string $typeCode = null, ?string $prefix = null): string
     {
         $annee = date('Y');
-        $prefix = "COUR-{$annee}-";
+
+        $base = match ($typeCode) {
+            'ENTRANT' => 'EE',
+            'SORTANT' => 'ES',
+            'INT_ENTRANT' => ($prefix ?: 'INT') . '-IE',
+            'INT_SORTANT' => ($prefix ?: 'INT') . '-IS',
+            default => 'COUR',
+        };
+
+        $pattern = "{$base}-{$annee}-";
 
         // lockForUpdate protège contre les numéros dupliqués en concurrence
         // (efficace lorsque la génération a lieu dans une transaction).
-        $dernier = self::where('numero', 'like', "{$prefix}%")
+        $dernier = self::where('numero', 'like', "{$pattern}%")
             ->orderByDesc('id')
             ->lockForUpdate()
             ->value('numero');
@@ -131,7 +146,7 @@ class Courrier extends Model
             $nouveauNum = (int) $matches[1] + 1;
         }
 
-        return $prefix . str_pad((string) $nouveauNum, 4, '0', STR_PAD_LEFT);
+        return $pattern . str_pad((string) $nouveauNum, 4, '0', STR_PAD_LEFT);
     }
 
     // =====================================================================

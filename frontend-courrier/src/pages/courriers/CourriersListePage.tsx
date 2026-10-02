@@ -22,9 +22,10 @@ const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
 const PER_PAGE = 15
 
 const TITLES: Record<string, string> = {
-  ENTRANT: 'Courriers entrants',
-  SORTANT: 'Courriers sortants',
-  INTERNE: 'Courriers internes',
+  ENTRANT: 'Courriers externes entrants',
+  SORTANT: 'Courriers externes sortants',
+  INT_ENTRANT: 'Courriers internes entrants',
+  INT_SORTANT: 'Courriers internes sortants',
 }
 
 export function CourriersListePage() {

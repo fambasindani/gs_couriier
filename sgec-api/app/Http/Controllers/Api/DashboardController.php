@@ -28,7 +28,7 @@ class DashboardController extends Controller
 
             $entrants = (clone $base)->whereHas('typeCourrier', fn ($q) => $q->where('code', 'ENTRANT'))->count();
             $sortants = (clone $base)->whereHas('typeCourrier', fn ($q) => $q->where('code', 'SORTANT'))->count();
-            $internes = (clone $base)->whereHas('typeCourrier', fn ($q) => $q->where('code', 'INTERNE'))->count();
+            $internes = (clone $base)->whereHas('typeCourrier', fn ($q) => $q->whereIn('code', ['INT_ENTRANT', 'INT_SORTANT']))->count();
 
             $enCours = (clone $base)->whereHas('statut', fn ($q) => $q->whereIn('code', ['AFFECTE', 'EN_COURS']))->count();
             $traites = (clone $base)->whereHas('statut', fn ($q) => $q->where('code', 'TRAITE'))->count();
@@ -205,7 +205,7 @@ class DashboardController extends Controller
                     ->whereYear('created_at', $date->year)
                     ->count();
 
-                $internes[] = (clone $base)->whereHas('typeCourrier', fn ($q) => $q->where('code', 'INTERNE'))
+                $internes[] = (clone $base)->whereHas('typeCourrier', fn ($q) => $q->whereIn('code', ['INT_ENTRANT', 'INT_SORTANT']))
                     ->whereMonth('created_at', $date->month)
                     ->whereYear('created_at', $date->year)
                     ->count();

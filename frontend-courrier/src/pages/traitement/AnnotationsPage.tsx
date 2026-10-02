@@ -177,12 +177,12 @@ export function AnnotationsPage() {
   return (
     <div>
       <PageHeader
-        title="Annotations"
+        title="Instructions"
         subtitle="Instructions et notes associées aux courriers."
         actions={
           canManage ? (
             <Button icon={<Plus className="h-4 w-4" />} onClick={openCreate}>
-              Nouvelle annotation
+              Nouvelle instruction
             </Button>
           ) : undefined
         }
@@ -303,7 +303,7 @@ export function AnnotationsPage() {
 
       <Modal
         open={formOpen}
-        title={editing ? 'Modifier l’annotation' : 'Nouvelle annotation'}
+        title={editing ? 'Modifier l’instruction' : 'Nouvelle instruction'}
         onClose={() => setFormOpen(false)}
         footer={
           <>

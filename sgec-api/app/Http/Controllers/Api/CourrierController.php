@@ -7,6 +7,7 @@ use App\Helpers\AuditLogger;
 use App\Models\Courrier;
 use App\Models\LettreModele;
 use App\Models\StatutCourrier;
+use App\Models\TypeCourrier;
 use App\Services\CircuitService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -101,7 +102,13 @@ class CourrierController extends Controller
             ]);
 
             return DB::transaction(function () use ($validated) {
-                $validated['numero'] = Courrier::genererNumero();
+                // Matricule selon le type + (interne) préfixe de la direction émettrice
+                $typeCode = TypeCourrier::find($validated['type_courrier_id'])?->code;
+                $prefix = in_array($typeCode, ['INT_ENTRANT', 'INT_SORTANT'], true)
+                    ? (auth()->user()->direction?->code ?? 'INT')
+                    : null;
+
+                $validated['numero'] = Courrier::genererNumero($typeCode, $prefix);
                 $validated['created_by'] = auth()->id();
                 $validated['date_reception'] = $validated['date_reception'] ?? now();
                 // Colonne NOT NULL : on évite d'insérer null

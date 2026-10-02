@@ -71,6 +71,9 @@ class ArchiveController extends Controller
                 if ($courrierLie && $courrierLie->statut?->code === 'ARCHIVE') {
                     return $this->error('Ce courrier est déjà archivé.', null, 409);
                 }
+                if ($courrierLie && ! in_array($courrierLie->statut?->code, ['TRAITE', 'VALIDE', 'CLOTURE'], true)) {
+                    return $this->error('Un courrier non validé ou non traité ne peut pas être archivé.', null, 409);
+                }
             }
 
             $validated['cote_archive'] = Archive::genererCote();
@@ -212,6 +215,10 @@ class ArchiveController extends Controller
         try {
             if ($courrier->statut?->code === 'ARCHIVE') {
                 return $this->error('Ce courrier est déjà archivé.', null, 409);
+            }
+
+            if (! in_array($courrier->statut?->code, ['TRAITE', 'VALIDE', 'CLOTURE'], true)) {
+                return $this->error('Un courrier non validé ou non traité ne peut pas être archivé.', null, 409);
             }
 
             $validated = $request->validate([

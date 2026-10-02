@@ -54,9 +54,10 @@ export const MENU: MenuSection[] = [
         title: 'Courriers',
         icon: 'Mail',
         children: [
-          { title: 'Courriers entrants', path: '/courriers?type=ENTRANT', permission: 'courriers.view' },
-          { title: 'Courriers sortants', path: '/courriers?type=SORTANT', permission: 'courriers.view' },
-          { title: 'Courriers internes', path: '/courriers?type=INTERNE', permission: 'courriers.view' },
+          { title: 'Courrier externe entrant', path: '/courriers?type=ENTRANT', permission: 'courriers.view' },
+          { title: 'Courrier externe sortant', path: '/courriers?type=SORTANT', permission: 'courriers.view' },
+          { title: 'Courrier interne entrant', path: '/courriers?type=INT_ENTRANT', permission: 'courriers.view' },
+          { title: 'Courrier interne sortant', path: '/courriers?type=INT_SORTANT', permission: 'courriers.view' },
           { title: 'Courriers en retard', path: '/courriers/en-retard', permission: 'courriers.view' },
           { title: 'Réponses liées', path: '/courriers/lies', permission: 'courriers.view' },
           { title: 'Recherche avancée', path: '/courriers/recherche', permission: 'courriers.view' },
@@ -73,7 +74,7 @@ export const MENU: MenuSection[] = [
         icon: 'Share2',
         children: [
           { title: 'Affectations', path: '/traitement/affectations', permission: 'courriers.view' },
-          { title: 'Annotations', path: '/traitement/annotations', permission: 'courriers.view' },
+          { title: 'Instructions', path: '/traitement/annotations', permission: 'courriers.view' },
           { title: 'Validations & Visas', path: '/traitement/validations', permission: 'courriers.view' },
           { title: 'Circuit de traitement', path: '/traitement/circuit', permission: 'courriers.view' },
         ],
