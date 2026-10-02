@@ -125,7 +125,9 @@ export function AffectationsPage() {
       .list(params)
       .then((res) => {
         if (active) {
-          setData(res.data)
+          setData((prev) =>
+            JSON.stringify(prev) === JSON.stringify(res.data) ? prev : res.data,
+          )
           setError(null)
         }
       })
@@ -142,7 +144,7 @@ export function AffectationsPage() {
 
   // Rafraîchissement automatique : l'accusé de réception devient visible en temps réel
   useEffect(() => {
-    const timer = setInterval(() => { if (document.visibilityState === 'visible') setReloadKey((value) => value + 1) }, 30000)
+    const timer = setInterval(() => { if (document.visibilityState === 'visible') setReloadKey((value) => value + 1) }, 60000)
     return () => clearInterval(timer)
   }, [])
 

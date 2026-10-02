@@ -114,7 +114,9 @@ export function CourrierDetailPage() {
       .show(id)
       .then((res) => {
         if (active) {
-          setCourrier(res.data)
+          setCourrier((prev) =>
+            JSON.stringify(prev) === JSON.stringify(res.data) ? prev : res.data,
+          )
           setError(null)
         }
       })
@@ -179,7 +181,7 @@ export function CourrierDetailPage() {
 
   // Rafraîchissement automatique (accusé de réception / traçabilité en temps réel)
   useEffect(() => {
-    const timer = setInterval(() => { if (document.visibilityState === 'visible') setReloadKey((value) => value + 1) }, 30000)
+    const timer = setInterval(() => { if (document.visibilityState === 'visible') setReloadKey((value) => value + 1) }, 60000)
     return () => clearInterval(timer)
   }, [])
 

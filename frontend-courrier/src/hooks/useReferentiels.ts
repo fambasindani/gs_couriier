@@ -32,51 +32,60 @@ const EMPTY: Referentiels = {
   loading: true,
 }
 
-/** Charge tous les référentiels du module Courrier (pour filtres et formulaires). */
+// Cache global : les référentiels ne sont chargés qu'une seule fois.
+let cache: Referentiels | null = null
+let pending: Promise<Referentiels> | null = null
+
+function load(): Promise<Referentiels> {
+  if (cache) return Promise.resolve(cache)
+  if (pending) return pending
+
+  if (USE_MOCK) {
+    cache = {
+      types: mockTypes,
+      categories: mockCategories,
+      priorites: mockPriorites,
+      statuts: mockStatuts,
+      expediteurs: mockExpediteurs,
+      destinataires: mockDestinataires,
+      loading: false,
+    }
+    return Promise.resolve(cache)
+  }
+
+  pending = Promise.all([
+    referentielsService.types(),
+    referentielsService.categories(),
+    referentielsService.priorites(),
+    referentielsService.statuts(),
+    referentielsService.expediteurs(),
+    referentielsService.destinataires(),
+  ])
+    .then(([types, categories, priorites, statuts, expediteurs, destinataires]) => {
+      cache = { types, categories, priorites, statuts, expediteurs, destinataires, loading: false }
+      return cache
+    })
+    .catch(() => {
+      cache = { ...EMPTY, loading: false }
+      return cache
+    })
+
+  return pending
+}
+
+/** Charge les référentiels une seule fois, puis les partage entre les pages. */
 export function useReferentiels(): Referentiels {
-  const [state, setState] = useState<Referentiels>(EMPTY)
+  const [state, setState] = useState<Referentiels>(cache ?? EMPTY)
 
   useEffect(() => {
-    let active = true
-
-    if (USE_MOCK) {
-      setState({
-        types: mockTypes,
-        categories: mockCategories,
-        priorites: mockPriorites,
-        statuts: mockStatuts,
-        expediteurs: mockExpediteurs,
-        destinataires: mockDestinataires,
-        loading: false,
-      })
+    if (cache) {
+      setState(cache)
       return
     }
-
-    Promise.all([
-      referentielsService.types(),
-      referentielsService.categories(),
-      referentielsService.priorites(),
-      referentielsService.statuts(),
-      referentielsService.expediteurs(),
-      referentielsService.destinataires(),
-    ])
-      .then(([types, categories, priorites, statuts, expediteurs, destinataires]) => {
-        if (active) {
-          setState({
-            types,
-            categories,
-            priorites,
-            statuts,
-            expediteurs,
-            destinataires,
-            loading: false,
-          })
-        }
-      })
-      .catch(() => {
-        if (active) setState((prev) => ({ ...prev, loading: false }))
-      })
-
+    let active = true
+    load().then((value) => {
+      if (active) setState(value)
+    })
     return () => {
       active = false
     }
