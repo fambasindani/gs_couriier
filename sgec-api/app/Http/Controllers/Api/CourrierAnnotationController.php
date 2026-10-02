@@ -127,9 +127,16 @@ class CourrierAnnotationController extends Controller
 
             $annotation->update($validated);
 
+            CircuitService::etape(
+                $annotation->courrier,
+                'courrier.annote.modifiee',
+                'Instruction',
+                "Instruction #{$annotation->id} modifiée par " . auth()->user()->name
+            );
+
             return $this->success(
                 $annotation->fresh(['courrier', 'user']),
-                'Annotation mise à jour'
+                'Instruction mise à jour'
             );
         } catch (ValidationException $e) {
             return $this->error('Erreur de validation', $e->errors(), 422);
@@ -145,8 +152,17 @@ class CourrierAnnotationController extends Controller
                 return $this->error('Accès refusé à cette annotation.', null, 403);
             }
 
+            if ($annotation->courrier) {
+                CircuitService::etape(
+                    $annotation->courrier,
+                    'courrier.annote.supprimee',
+                    'Instruction',
+                    "Instruction #{$annotation->id} supprimée par " . auth()->user()->name
+                );
+            }
+
             $annotation->delete();
-            return $this->success(null, 'Annotation supprimée');
+            return $this->success(null, 'Instruction supprimée');
         } catch (\Throwable $e) {
             return $this->error('Erreur lors de la suppression', $e->getMessage(), 500);
         }

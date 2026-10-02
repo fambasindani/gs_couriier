@@ -179,6 +179,15 @@ class CourrierValidationController extends Controller
                 return $this->error('Accès refusé à cette validation.', null, 403);
             }
 
+            if ($validation->courrier) {
+                CircuitService::etape(
+                    $validation->courrier,
+                    'courrier.validation.supprimee',
+                    'Validation',
+                    "Validation #{$validation->id} supprimée par " . auth()->user()->name
+                );
+            }
+
             $validation->delete();
             return $this->success(null, 'Validation supprimée');
         } catch (\Throwable $e) {

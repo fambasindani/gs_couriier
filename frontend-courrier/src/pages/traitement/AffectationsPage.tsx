@@ -140,6 +140,12 @@ export function AffectationsPage() {
     }
   }, [params, reloadKey])
 
+  // Rafraîchissement automatique : l'accusé de réception devient visible en temps réel
+  useEffect(() => {
+    const timer = setInterval(() => setReloadKey((value) => value + 1), 10000)
+    return () => clearInterval(timer)
+  }, [])
+
   const refresh = () => setReloadKey((value) => value + 1)
 
   const openCreate = () => {

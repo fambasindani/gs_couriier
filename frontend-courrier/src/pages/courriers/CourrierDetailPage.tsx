@@ -40,6 +40,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useConfirm } from '@/stores/confirm.store'
 import { useToast } from '@/stores/toast.store'
 import { transitionsAutorisees } from '@/lib/statuts'
+import { projetStatutLabel, projetStatutTone } from '@/lib/projetStatuts'
 import type {
   Courrier,
   CourrierAffectation,
@@ -175,6 +176,12 @@ export function CourrierDetailPage() {
   )
 
   const isArchived = courrier?.statut?.code === 'ARCHIVE'
+
+  // Rafraîchissement automatique (accusé de réception / traçabilité en temps réel)
+  useEffect(() => {
+    const timer = setInterval(() => setReloadKey((value) => value + 1), 10000)
+    return () => clearInterval(timer)
+  }, [])
 
   const refresh = () => setReloadKey((value) => value + 1)
 
@@ -822,6 +829,38 @@ export function CourrierDetailPage() {
                     )}
                     <span className="mt-1 block text-[0.75rem] text-slate-400">
                       {formatDate(item.date_validation ?? item.created_at, true)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+
+          <Card className="p-5">
+            <h6 className="section-title">
+              Projets de lettres ({(courrier.projets ?? []).length + (courrier.projets_sortants ?? []).length})
+            </h6>
+            {(courrier.projets ?? []).length === 0 && (courrier.projets_sortants ?? []).length === 0 ? (
+              <p className="text-[0.83rem] text-slate-400">Aucun projet de lettre lié.</p>
+            ) : (
+              <ul className="space-y-2">
+                {[...(courrier.projets ?? []), ...(courrier.projets_sortants ?? [])].map((projet) => (
+                  <li key={projet.id} className="rounded-lg border border-line p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <Link
+                        to={`/projets-lettres/${projet.id}`}
+                        className="text-[0.83rem] font-semibold text-primary hover:underline"
+                      >
+                        {projet.reference_projet}
+                      </Link>
+                      <Badge tone={projetStatutTone(projet.statut)}>
+                        {projetStatutLabel(projet.statut)}
+                      </Badge>
+                    </div>
+                    <span className="mt-1 block text-[0.78rem] text-slate-500">{projet.objet}</span>
+                    <span className="mt-0.5 block text-[0.72rem] text-slate-400">
+                      {(projet.versions ?? []).length} version(s) •{' '}
+                      {formatDate(projet.date_creation, true)}
                     </span>
                   </li>
                 ))}

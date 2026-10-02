@@ -234,6 +234,8 @@ export interface TimelineItem {
 export interface CourrierDetail extends Courrier {
   updated_by?: number | null
   modificateur?: User | null
+  projets?: ProjetLettre[]
+  projets_sortants?: ProjetLettre[]
   parent?: Pick<Courrier, 'id' | 'numero' | 'objet' | 'date_reception'> | null
   reponses?: Courrier[]
   pieces?: CourrierPiece[]

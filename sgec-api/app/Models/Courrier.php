@@ -97,6 +97,18 @@ class Courrier extends Model
         return $this->hasMany(Courrier::class, 'courrier_parent_id');
     }
 
+    /** Projets de lettres dont ce courrier est le courrier entrant d'origine. */
+    public function projets(): HasMany
+    {
+        return $this->hasMany(ProjetLettre::class, 'courrier_entrant_id');
+    }
+
+    /** Projets dont ce courrier est le courrier sortant officiel. */
+    public function projetsSortants(): HasMany
+    {
+        return $this->hasMany(ProjetLettre::class, 'courrier_sortant_id');
+    }
+
     public function createur(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -127,8 +139,8 @@ class Courrier extends Model
         $base = match ($typeCode) {
             'ENTRANT' => 'EE',
             'SORTANT' => 'ES',
-            'INT_ENTRANT' => ($prefix ?: 'INT') . '-IE',
-            'INT_SORTANT' => ($prefix ?: 'INT') . '-IS',
+            'INT_ENTRANT' => ($prefix ?: 'INT') . '-EE',
+            'INT_SORTANT' => ($prefix ?: 'INT') . '-ES',
             default => 'COUR',
         };
 

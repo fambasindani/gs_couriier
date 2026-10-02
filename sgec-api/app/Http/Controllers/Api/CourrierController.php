@@ -163,6 +163,8 @@ class CourrierController extends Controller
                     'annotations.user',
                     'validations.user',
                     'historiques',
+                    'projets',
+                    'projetsSortants',
                 ]),
                 'Détails du courrier'
             );
@@ -485,6 +487,13 @@ class CourrierController extends Controller
                 "Courrier {$courrier->numero} lié au courrier parent #{$validated['courrier_parent_id']}"
             );
 
+            CircuitService::etape(
+                $courrier,
+                'courrier.lie',
+                'Liaison',
+                "Courrier {$courrier->numero} lié au courrier parent #{$validated['courrier_parent_id']}"
+            );
+
             return $this->success(
                 $courrier->fresh(['parent', 'reponses']),
                 'Courrier lié avec succès'
@@ -506,6 +515,13 @@ class CourrierController extends Controller
 
             AuditLogger::log(
                 'courrier.delie',
+                "Courrier {$courrier->numero} délié de son parent"
+            );
+
+            CircuitService::etape(
+                $courrier,
+                'courrier.delie',
+                'Liaison',
                 "Courrier {$courrier->numero} délié de son parent"
             );
 

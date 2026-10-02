@@ -247,6 +247,15 @@ class CourrierAffectationController extends Controller
                 return $this->error('Accès refusé à cette affectation.', null, 403);
             }
 
+            if ($affectation->courrier) {
+                CircuitService::etape(
+                    $affectation->courrier,
+                    'courrier.affectation.supprimee',
+                    'Affectation',
+                    "Affectation #{$affectation->id} supprimée par " . auth()->user()->name
+                );
+            }
+
             $affectation->delete();
             return $this->success(null, 'Affectation supprimée');
         } catch (\Throwable $e) {

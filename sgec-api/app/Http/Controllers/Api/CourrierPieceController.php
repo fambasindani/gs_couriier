@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Helpers\AuditLogger;
 use App\Models\Courrier;
 use App\Models\CourrierPiece;
+use App\Services\CircuitService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -72,6 +73,13 @@ class CourrierPieceController extends Controller
 
             AuditLogger::log(
                 'courrier.piece.ajoutee',
+                "Pièce '{$nomOriginal}' ajoutée au courrier {$courrier->numero}"
+            );
+
+            CircuitService::etape(
+                $courrier,
+                'courrier.piece.ajoutee',
+                'Pièce jointe',
                 "Pièce '{$nomOriginal}' ajoutée au courrier {$courrier->numero}"
             );
 
@@ -149,6 +157,13 @@ class CourrierPieceController extends Controller
 
                 AuditLogger::log(
                     'courrier.piece.supprimee',
+                    "Pièce '{$nomOriginal}' supprimée du courrier {$courrier->numero}"
+                );
+
+                CircuitService::etape(
+                    $courrier,
+                    'courrier.piece.supprimee',
+                    'Pièce jointe',
                     "Pièce '{$nomOriginal}' supprimée du courrier {$courrier->numero}"
                 );
             }
