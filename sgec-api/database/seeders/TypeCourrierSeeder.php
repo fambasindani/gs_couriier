@@ -23,6 +23,17 @@ class TypeCourrierSeeder extends Seeder
             );
         }
 
-        $this->command->info('✅ ' . count($types) . ' types de courrier créés.');
+        // Nettoyage de l'ancien code "INTERNE" (remplacé par INT_ENTRANT/INT_SORTANT)
+        $obsolete = TypeCourrier::where('code', 'INTERNE')->first();
+        if ($obsolete) {
+            $cible = TypeCourrier::where('code', 'INT_ENTRANT')->first();
+            if ($cible) {
+                \App\Models\Courrier::where('type_courrier_id', $obsolete->id)
+                    ->update(['type_courrier_id' => $cible->id]);
+            }
+            $obsolete->delete();
+        }
+
+        $this->command->info('✅ ' . count($types) . ' types de courrier créés (ancien code INTERNE supprimé).');
     }
 }

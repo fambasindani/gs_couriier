@@ -139,7 +139,7 @@ class Courrier extends Model
         $base = match ($typeCode) {
             'ENTRANT' => 'EE',
             'SORTANT' => 'ES',
-            'INT_ENTRANT' => ($prefix ?: 'INT') . '-EE',
+            'INT_ENTRANT', 'INTERNE' => ($prefix ?: 'INT') . '-EE',
             'INT_SORTANT' => ($prefix ?: 'INT') . '-ES',
             default => 'COUR',
         };
