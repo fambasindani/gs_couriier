@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -60,6 +61,8 @@ const TOOLTIP_STYLE = {
 
 export function DashboardPage() {
   const user = useAuthStore((state) => state.user)
+  const hasPermission = useAuthStore((state) => state.hasPermission)
+  const canCreate = hasPermission('courriers.create')
 
   const [overview, setOverview] = useState<DashboardOverview | null>(null)
   const [volume, setVolume] = useState<VolumeMensuel | null>(null)
@@ -154,10 +157,16 @@ export function DashboardPage() {
         subtitle={`Bonjour ${welcomeName}, nous sommes le ${today}. Voici l'activité du courrier.`}
         actions={
           <>
-            <Button variant="outline" icon={<FileDown className="h-4 w-4" />}>
-              Exporter
-            </Button>
-            <Button icon={<Plus className="h-4 w-4" />}>Enregistrer un courrier</Button>
+            <Link to="/rapports/export">
+              <Button variant="outline" icon={<FileDown className="h-4 w-4" />}>
+                Exporter
+              </Button>
+            </Link>
+            {canCreate && (
+              <Link to="/courriers/nouveau">
+                <Button icon={<Plus className="h-4 w-4" />}>Enregistrer un courrier</Button>
+              </Link>
+            )}
           </>
         }
       />
@@ -354,16 +363,6 @@ export function DashboardPage() {
         <Card className="p-5 xl:col-span-2">
           <div className="mb-4 flex flex-col justify-between gap-2 md:flex-row md:items-center">
             <h6 className="section-title mb-0">Derniers Courriers Enregistrés</h6>
-            <div className="flex overflow-hidden rounded-lg border border-line">
-              <input
-                type="text"
-                placeholder="Recherche rapide..."
-                className="w-48 border-none px-3 py-1.5 text-[0.8rem] outline-none"
-              />
-              <button className="border-l border-line px-3 text-slate-500 hover:bg-slate-50">
-                <Eye className="h-4 w-4" />
-              </button>
-            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -410,18 +409,22 @@ export function DashboardPage() {
                     </td>
                     <td className="text-right">
                       <div className="inline-flex gap-2">
-                        <button
+                        <Link
+                          to={`/courriers/${courrier.id}`}
                           className="rounded-md border border-line bg-white p-1.5 text-primary hover:bg-primary/5"
                           title="Consulter"
                         >
                           <Eye className="h-4 w-4" />
-                        </button>
-                        <button
-                          className="rounded-md border border-line bg-white p-1.5 text-slate-500 hover:bg-slate-50"
-                          title="Modifier"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
+                        </Link>
+                        {hasPermission('courriers.update') && (
+                          <Link
+                            to={`/courriers/${courrier.id}/modifier`}
+                            className="rounded-md border border-line bg-white p-1.5 text-slate-500 hover:bg-slate-50"
+                            title="Modifier"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>

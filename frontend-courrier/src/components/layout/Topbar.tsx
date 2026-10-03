@@ -41,6 +41,7 @@ export function Topbar() {
   const toggleMobileSidebar = useUiStore((state) => state.toggleMobileSidebar)
   const [openMenu, setOpenMenu] = useState<'notif' | 'user' | null>(null)
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
+  const [query, setQuery] = useState('')
   const confirm = useConfirm()
 
   const roleLabel = user?.roles?.[0]?.nom ?? 'Utilisateur'
@@ -95,12 +96,25 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="search-bar-top hidden lg:block">
+        <form
+          className="search-bar-top hidden lg:block"
+          onSubmit={(event) => {
+            event.preventDefault()
+            const term = query.trim()
+            if (term) navigate(`/courriers/recherche?q=${encodeURIComponent(term)}`)
+            setQuery('')
+          }}
+        >
           <div className="flex items-center">
             <Search className="mr-2 h-4 w-4 text-slate-400" />
-            <input type="text" placeholder="Rechercher un courrier, réf..." />
+            <input
+              type="text"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Rechercher un courrier, réf..."
+            />
           </div>
-        </div>
+        </form>
 
         {/* Notifications */}
         <div className="relative">

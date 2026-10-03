@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Helpers\AuditLogger;
 use App\Models\Courrier;
+use App\Models\CourrierAffectation;
 use App\Models\LettreModele;
 use App\Models\StatutCourrier;
 use App\Models\TypeCourrier;
@@ -25,7 +26,9 @@ class CourrierController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Courrier::visiblePour($request->user())->visibleConfidentialite($request->user())->with([
+            $query = Courrier::visiblePour($request->user())->visibleConfidentialite($request->user())
+                ->select(Courrier::LIST_SELECT)
+                ->with([
                 'typeCourrier', 'categorie', 'priorite', 'statut',
                 'expediteur', 'destinataire', 'createur',
             ]);
@@ -60,6 +63,10 @@ class CourrierController extends Controller
                 $query->where('confidentialite', $request->confidentialite);
             }
 
+            if ($request->filled('created_by')) {
+                $query->where('created_by', $request->created_by);
+            }
+
             if ($request->filled('date_debut')) {
                 $query->whereDate('date_reception', '>=', $request->date_debut);
             }
@@ -71,9 +78,11 @@ class CourrierController extends Controller
             $courriers = $query->orderByDesc('created_at')
                                ->paginate($request->get('per_page', 15));
 
+            $this->appliquerPerspective($courriers, $request->user());
+
             return $this->success($courriers, 'Liste des courriers');
         } catch (\Throwable $e) {
-            return $this->error('Erreur lors de la récupération', $e->getMessage(), 500);
+            return $this->error('Erreur lors de la rÃ©cupÃ©ration', $e->getMessage(), 500);
         }
     }
 
@@ -96,13 +105,13 @@ class CourrierController extends Controller
                 'date_limite' => 'nullable|date',
                 'date_cloture' => 'nullable|date',
                 'confidentialite' => 'nullable|in:PUBLIC,INTERNE,CONFIDENTIEL,TRES_CONFIDENTIEL',
-                // 'nombre_pieces' est géré automatiquement par CourrierPieceController
+                // 'nombre_pieces' est gÃ©rÃ© automatiquement par CourrierPieceController
                 'nombre_pages' => 'nullable|integer|min:0',
                 'observation' => 'nullable|string',
             ]);
 
             return DB::transaction(function () use ($validated) {
-                // Matricule selon le type + (interne) préfixe de la direction émettrice
+                // Matricule selon le type + (interne) prÃ©fixe de la direction Ã©mettrice
                 $typeCode = TypeCourrier::find($validated['type_courrier_id'])?->code;
                 $prefix = in_array($typeCode, ['INT_ENTRANT', 'INT_SORTANT'], true)
                     ? (auth()->user()->direction?->code ?? 'INT')
@@ -111,21 +120,21 @@ class CourrierController extends Controller
                 $validated['numero'] = Courrier::genererNumero($typeCode, $prefix);
                 $validated['created_by'] = auth()->id();
                 $validated['date_reception'] = $validated['date_reception'] ?? now();
-                // Colonne NOT NULL : on évite d'insérer null
+                // Colonne NOT NULL : on Ã©vite d'insÃ©rer null
                 $validated['nombre_pages'] = $validated['nombre_pages'] ?? 0;
 
                 $courrier = Courrier::create($validated);
 
                 AuditLogger::log(
                     'courrier.created',
-                    "Courrier {$courrier->numero} créé par " . auth()->user()->name
+                    "Courrier {$courrier->numero} crÃ©Ã© par " . auth()->user()->name
                 );
 
                 CircuitService::etape(
                     $courrier,
                     'courrier.cree',
                     'Enregistrement',
-                    "Courrier {$courrier->numero} créé par " . auth()->user()->name,
+                    "Courrier {$courrier->numero} crÃ©Ã© par " . auth()->user()->name,
                     null,
                     ['numero' => $courrier->numero, 'objet' => $courrier->objet]
                 );
@@ -135,23 +144,30 @@ class CourrierController extends Controller
                         'typeCourrier', 'categorie', 'priorite', 'statut',
                         'expediteur', 'destinataire', 'createur',
                     ]),
-                    'Courrier enregistré avec succès',
+                    'Courrier enregistrÃ© avec succÃ¨s',
                     201
                 );
             });
         } catch (ValidationException $e) {
             return $this->error('Erreur de validation', $e->errors(), 422);
         } catch (\Throwable $e) {
-            return $this->error('Erreur lors de la création', $e->getMessage(), 500);
+            return $this->error('Erreur lors de la crÃ©ation', $e->getMessage(), 500);
         }
     }
 
     public function show(Courrier $courrier)
     {
         try {
-            if (! $courrier->estVisiblePar(auth()->user())) {
-                return $this->error('Accès refusé à ce courrier.', null, 403);
+            $user = auth()->user();
+
+            if (! $courrier->estVisiblePar($user)) {
+                return $this->error('AccÃ¨s refusÃ© Ã  ce courrier.', null, 403);
             }
+
+            $courrier->peut_supprimer = $user->hasPermission('courriers.delete')
+                || ($courrier->estSupprimable() && $courrier->affecteAUneUniteDe($user));
+
+            $courrier->sens_pour_moi = $courrier->sensPourUtilisateur($user);
 
             return $this->success(
                 $courrier->load([
@@ -166,7 +182,7 @@ class CourrierController extends Controller
                     'projets',
                     'projetsSortants',
                 ]),
-                'Détails du courrier'
+                'DÃ©tails du courrier'
             );
         } catch (\Throwable $e) {
             return $this->error('Erreur serveur', $e->getMessage(), 500);
@@ -177,11 +193,11 @@ class CourrierController extends Controller
     {
         try {
             if (! $courrier->estVisiblePar($request->user())) {
-                return $this->error('Accès refusé à ce courrier.', null, 403);
+                return $this->error('AccÃ¨s refusÃ© Ã  ce courrier.', null, 403);
             }
 
             if ($courrier->statut?->code === 'ARCHIVE') {
-                return $this->error('Un courrier archivé ne peut plus être modifié.', null, 409);
+                return $this->error('Un courrier archivÃ© ne peut plus Ãªtre modifiÃ©.', null, 409);
             }
 
             $validated = $request->validate([
@@ -200,7 +216,7 @@ class CourrierController extends Controller
                 'date_limite' => 'nullable|date',
                 'date_cloture' => 'nullable|date',
                 'confidentialite' => 'nullable|in:PUBLIC,INTERNE,CONFIDENTIEL,TRES_CONFIDENTIEL',
-                // 'nombre_pieces' est géré automatiquement par CourrierPieceController
+                // 'nombre_pieces' est gÃ©rÃ© automatiquement par CourrierPieceController
                 'nombre_pages' => 'nullable|integer|min:0',
                 'observation' => 'nullable|string',
             ]);
@@ -209,14 +225,14 @@ class CourrierController extends Controller
                 $validated['nombre_pages'] = 0;
             }
 
-            // Machine à états : on n'autorise que les transitions définies
+            // Machine Ã  Ã©tats : on n'autorise que les transitions dÃ©finies
             if (array_key_exists('statut_id', $validated)) {
                 $nouveauStatut = StatutCourrier::find($validated['statut_id']);
                 if ($nouveauStatut
                     && $nouveauStatut->code !== $courrier->statut?->code
                     && ! $courrier->transitionAutorisee($nouveauStatut->code)) {
                     return $this->error(
-                        "Transition de statut non autorisée : {$courrier->statut?->code} → {$nouveauStatut->code}.",
+                        "Transition de statut non autorisÃ©e : {$courrier->statut?->code} â†’ {$nouveauStatut->code}.",
                         null,
                         422
                     );
@@ -233,15 +249,15 @@ class CourrierController extends Controller
 
             AuditLogger::log(
                 'courrier.updated',
-                "Courrier {$courrier->numero} modifié par " . auth()->user()->name
+                "Courrier {$courrier->numero} modifiÃ© par " . auth()->user()->name
             );
 
             CircuitService::etape(
                 $courrier,
                 'courrier.modifie',
                 'Modification',
-                "Courrier {$courrier->numero} modifié par " . auth()->user()->name
-                    . (! empty($changements) ? ' — Champs : ' . implode(', ', array_keys($changements)) : ''),
+                "Courrier {$courrier->numero} modifiÃ© par " . auth()->user()->name
+                    . (! empty($changements) ? ' â€” Champs : ' . implode(', ', array_keys($changements)) : ''),
                 $anciennesValeurs,
                 $courrier->only(array_keys($changements))
             );
@@ -251,84 +267,100 @@ class CourrierController extends Controller
                     'typeCourrier', 'categorie', 'priorite', 'statut',
                     'expediteur', 'destinataire',
                 ]),
-                'Courrier mis à jour'
+                'Courrier mis Ã  jour'
             );
         } catch (ValidationException $e) {
             return $this->error('Erreur de validation', $e->errors(), 422);
         } catch (\Throwable $e) {
-            return $this->error('Erreur lors de la mise à jour', $e->getMessage(), 500);
+            return $this->error('Erreur lors de la mise Ã  jour', $e->getMessage(), 500);
         }
     }
 
-    public function destroy(Courrier $courrier)
+    public function destroy(Request $request, Courrier $courrier)
     {
         try {
+            $user = $request->user();
+
+            // Règle : l'émetteur ne peut pas supprimer un courrier déjà validé/clôturé/archivé.
+            // Un utilisateur de la direction destinataire peut supprimer un courrier non encore validé
+            // qui lui est affecté ; la permission courriers.delete reste prioritaire.
+            $peutSupprimer = $user->hasPermission('courriers.delete')
+                || ($courrier->estSupprimable() && $courrier->affecteAUneUniteDe($user));
+
+            if (! $peutSupprimer) {
+                return $this->error(
+                    'Vous ne pouvez pas supprimer ce courrier : soit il est déjà validé, soit il n\'est pas affecté à votre service.',
+                    null,
+                    403
+                );
+            }
+
             $numero = $courrier->numero;
 
-            // NB : pas d'étape dans courrier_historiques ici, car la suppression
-            // en cascade effacerait aussitôt l'entrée. La traçabilité est assurée
+            // NB : pas d'Ã©tape dans courrier_historiques ici, car la suppression
+            // en cascade effacerait aussitÃ´t l'entrÃ©e. La traÃ§abilitÃ© est assurÃ©e
             // par audit_logs via AuditLogger.
             $courrier->delete();
 
             AuditLogger::log(
                 'courrier.deleted',
-                "Courrier {$numero} supprimé par " . auth()->user()->name
+                "Courrier {$numero} supprimÃ© par " . auth()->user()->name
             );
 
-            return $this->success(null, 'Courrier supprimé');
+            return $this->success(null, 'Courrier supprimÃ©');
         } catch (\Throwable $e) {
             return $this->error('Erreur lors de la suppression', $e->getMessage(), 500);
         }
     }
 
     /**
-     * Annule un courrier (permission dédiée courriers.annuler).
+     * Annule un courrier (permission dÃ©diÃ©e courriers.annuler).
      */
     public function annuler(Request $request, Courrier $courrier)
     {
         try {
             if (! $courrier->estVisiblePar($request->user())) {
-                return $this->error('Accès refusé à ce courrier.', null, 403);
+                return $this->error('AccÃ¨s refusÃ© Ã  ce courrier.', null, 403);
             }
 
             if (in_array($courrier->statut?->code, ['ARCHIVE', 'ANNULE'], true)) {
-                return $this->error('Ce courrier est déjà annulé ou archivé.', null, 409);
+                return $this->error('Ce courrier est dÃ©jÃ  annulÃ© ou archivÃ©.', null, 409);
             }
 
             $courrier->update(['statut_id' => StatutCourrier::idParCode('ANNULE')]);
 
-            AuditLogger::log('courrier.annule', "Courrier {$courrier->numero} annulé par " . auth()->user()->name);
+            AuditLogger::log('courrier.annule', "Courrier {$courrier->numero} annulÃ© par " . auth()->user()->name);
 
             CircuitService::etape(
                 $courrier,
                 'courrier.annule',
                 'Annulation',
-                "Courrier {$courrier->numero} annulé par " . auth()->user()->name
+                "Courrier {$courrier->numero} annulÃ© par " . auth()->user()->name
             );
 
-            return $this->success($courrier->fresh(['typeCourrier', 'categorie', 'priorite', 'statut']), 'Courrier annulé');
+            return $this->success($courrier->fresh(['typeCourrier', 'categorie', 'priorite', 'statut']), 'Courrier annulÃ©');
         } catch (\Throwable $e) {
-            return $this->error('Erreur lors de l’annulation', $e->getMessage(), 500);
+            return $this->error('Erreur lors de lâ€™annulation', $e->getMessage(), 500);
         }
     }
 
     /**
-     * Clôture un courrier (statut CLOTURE + date de clôture).
+     * ClÃ´ture un courrier (statut CLOTURE + date de clÃ´ture).
      */
     public function cloturer(Request $request, Courrier $courrier)
     {
         try {
             if (! $courrier->estVisiblePar($request->user())) {
-                return $this->error('Accès refusé à ce courrier.', null, 403);
+                return $this->error('AccÃ¨s refusÃ© Ã  ce courrier.', null, 403);
             }
 
             if (in_array($courrier->statut?->code, ['CLOTURE', 'ARCHIVE'], true)) {
-                return $this->error('Ce courrier est déjà clôturé ou archivé.', null, 409);
+                return $this->error('Ce courrier est dÃ©jÃ  clÃ´turÃ© ou archivÃ©.', null, 409);
             }
 
             if (! $courrier->transitionAutorisee('CLOTURE')) {
                 return $this->error(
-                    "Impossible de clôturer un courrier au statut {$courrier->statut?->code} (le courrier doit être traité ou validé).",
+                    "Impossible de clÃ´turer un courrier au statut {$courrier->statut?->code} (le courrier doit Ãªtre traitÃ© ou validÃ©).",
                     null,
                     422
                 );
@@ -341,34 +373,34 @@ class CourrierController extends Controller
 
             AuditLogger::log(
                 'courrier.cloture',
-                "Courrier {$courrier->numero} clôturé par " . auth()->user()->name
+                "Courrier {$courrier->numero} clÃ´turÃ© par " . auth()->user()->name
             );
 
             CircuitService::etape(
                 $courrier,
                 'courrier.cloture',
-                'Clôture',
-                "Courrier {$courrier->numero} clôturé par " . auth()->user()->name
+                'ClÃ´ture',
+                "Courrier {$courrier->numero} clÃ´turÃ© par " . auth()->user()->name
             );
 
             return $this->success(
                 $courrier->fresh(['typeCourrier', 'categorie', 'priorite', 'statut']),
-                'Courrier clôturé'
+                'Courrier clÃ´turÃ©'
             );
         } catch (\Throwable $e) {
-            return $this->error('Erreur lors de la clôture', $e->getMessage(), 500);
+            return $this->error('Erreur lors de la clÃ´ture', $e->getMessage(), 500);
         }
     }
 
     /**
-     * Génère un projet de lettre à partir d'un modèle, en fusionnant les
-     * variables {{...}} avec les données du courrier.
+     * GÃ©nÃ¨re un projet de lettre Ã  partir d'un modÃ¨le, en fusionnant les
+     * variables {{...}} avec les donnÃ©es du courrier.
      */
     public function genererLettre(Request $request, Courrier $courrier)
     {
         try {
             if (! $courrier->estVisiblePar($request->user())) {
-                return $this->error('Accès refusé à ce courrier.', null, 403);
+                return $this->error('AccÃ¨s refusÃ© Ã  ce courrier.', null, 403);
             }
 
             $validated = $request->validate([
@@ -383,11 +415,11 @@ class CourrierController extends Controller
                 'objet' => $donnees['objet'],
                 'corps' => $donnees['corps'],
                 'courrier' => ['id' => $courrier->id, 'numero' => $courrier->numero],
-            ], 'Lettre générée');
+            ], 'Lettre gÃ©nÃ©rÃ©e');
         } catch (ValidationException $e) {
             return $this->error('Erreur de validation', $e->errors(), 422);
         } catch (\Throwable $e) {
-            return $this->error('Erreur lors de la génération', $e->getMessage(), 500);
+            return $this->error('Erreur lors de la gÃ©nÃ©ration', $e->getMessage(), 500);
         }
     }
 
@@ -432,11 +464,11 @@ class CourrierController extends Controller
     }
 
     // =====================================================================
-    // Courriers liés (parent + réponses)
+    // Courriers liÃ©s (parent + rÃ©ponses)
     // =====================================================================
 
     /**
-     * Voir les courriers liés à un courrier (parent + réponses).
+     * Voir les courriers liÃ©s Ã  un courrier (parent + rÃ©ponses).
      */
     public function lies(Courrier $courrier)
     {
@@ -460,14 +492,14 @@ class CourrierController extends Controller
                 ] : null,
                 'reponses' => $reponses,
                 'total_reponses' => $reponses->count(),
-            ], 'Courriers liés');
+            ], 'Courriers liÃ©s');
         } catch (\Throwable $e) {
-            return $this->error('Erreur lors de la récupération', $e->getMessage(), 500);
+            return $this->error('Erreur lors de la rÃ©cupÃ©ration', $e->getMessage(), 500);
         }
     }
 
     /**
-     * Lier un courrier à un autre (réponse à un courrier parent).
+     * Lier un courrier Ã  un autre (rÃ©ponse Ã  un courrier parent).
      */
     public function lier(Request $request, Courrier $courrier)
     {
@@ -477,26 +509,26 @@ class CourrierController extends Controller
             ]);
 
             if ($validated['courrier_parent_id'] == $courrier->id) {
-                return $this->error('Un courrier ne peut pas être lié à lui-même.', null, 422);
+                return $this->error('Un courrier ne peut pas Ãªtre liÃ© Ã  lui-mÃªme.', null, 422);
             }
 
             $courrier->update(['courrier_parent_id' => $validated['courrier_parent_id']]);
 
             AuditLogger::log(
                 'courrier.lie',
-                "Courrier {$courrier->numero} lié au courrier parent #{$validated['courrier_parent_id']}"
+                "Courrier {$courrier->numero} liÃ© au courrier parent #{$validated['courrier_parent_id']}"
             );
 
             CircuitService::etape(
                 $courrier,
                 'courrier.lie',
                 'Liaison',
-                "Courrier {$courrier->numero} lié au courrier parent #{$validated['courrier_parent_id']}"
+                "Courrier {$courrier->numero} liÃ© au courrier parent #{$validated['courrier_parent_id']}"
             );
 
             return $this->success(
                 $courrier->fresh(['parent', 'reponses']),
-                'Courrier lié avec succès'
+                'Courrier liÃ© avec succÃ¨s'
             );
         } catch (ValidationException $e) {
             return $this->error('Erreur de validation', $e->errors(), 422);
@@ -506,7 +538,7 @@ class CourrierController extends Controller
     }
 
     /**
-     * Délier un courrier (supprimer le lien parent).
+     * DÃ©lier un courrier (supprimer le lien parent).
      */
     public function delier(Courrier $courrier)
     {
@@ -515,19 +547,19 @@ class CourrierController extends Controller
 
             AuditLogger::log(
                 'courrier.delie',
-                "Courrier {$courrier->numero} délié de son parent"
+                "Courrier {$courrier->numero} dÃ©liÃ© de son parent"
             );
 
             CircuitService::etape(
                 $courrier,
                 'courrier.delie',
                 'Liaison',
-                "Courrier {$courrier->numero} délié de son parent"
+                "Courrier {$courrier->numero} dÃ©liÃ© de son parent"
             );
 
-            return $this->success($courrier->fresh(), 'Courrier délié avec succès');
+            return $this->success($courrier->fresh(), 'Courrier dÃ©liÃ© avec succÃ¨s');
         } catch (\Throwable $e) {
-            return $this->error('Erreur lors de la déliaison', $e->getMessage(), 500);
+            return $this->error('Erreur lors de la dÃ©liaison', $e->getMessage(), 500);
         }
     }
 
@@ -536,12 +568,14 @@ class CourrierController extends Controller
     // =====================================================================
 
     /**
-     * Courriers en retard (date_limite dépassée et non traités).
+     * Courriers en retard (date_limite dÃ©passÃ©e et non traitÃ©s).
      */
     public function enRetard(Request $request)
     {
         try {
-            $query = Courrier::visiblePour($request->user())->visibleConfidentialite($request->user())->with([
+            $query = Courrier::visiblePour($request->user())->visibleConfidentialite($request->user())
+                ->select(Courrier::LIST_SELECT)
+                ->with([
                 'typeCourrier', 'priorite', 'statut',
                 'expediteur', 'destinataire', 'createur',
             ])
@@ -565,23 +599,27 @@ class CourrierController extends Controller
                 return $c;
             });
 
+            $this->appliquerPerspective($courriers, $request->user());
+
             return $this->success($courriers, 'Courriers en retard');
         } catch (\Throwable $e) {
-            return $this->error('Erreur lors de la récupération', $e->getMessage(), 500);
+            return $this->error('Erreur lors de la rÃ©cupÃ©ration', $e->getMessage(), 500);
         }
     }
 
     // =====================================================================
-    // Recherche avancée
+    // Recherche avancÃ©e
     // =====================================================================
 
     /**
-     * Recherche avancée multi-critères.
+     * Recherche avancÃ©e multi-critÃ¨res.
      */
     public function rechercheAvancee(Request $request)
     {
         try {
-            $query = Courrier::visiblePour($request->user())->visibleConfidentialite($request->user())->with([
+            $query = Courrier::visiblePour($request->user())->visibleConfidentialite($request->user())
+                ->select(Courrier::LIST_SELECT)
+                ->with([
                 'typeCourrier', 'categorie', 'priorite', 'statut',
                 'expediteur', 'destinataire', 'createur',
             ]);
@@ -621,13 +659,13 @@ class CourrierController extends Controller
                 $query->where('created_by', $request->created_by);
             }
 
-            // Confidentialité multi-valeurs
+            // ConfidentialitÃ© multi-valeurs
             if ($request->filled('confidentialite')) {
                 $values = explode(',', $request->confidentialite);
                 $query->whereIn('confidentialite', $values);
             }
 
-            // Période de réception
+            // PÃ©riode de rÃ©ception
             if ($request->filled('date_debut')) {
                 $query->whereDate('date_reception', '>=', $request->date_debut);
             }
@@ -635,7 +673,7 @@ class CourrierController extends Controller
                 $query->whereDate('date_reception', '<=', $request->date_fin);
             }
 
-            // Période limite
+            // PÃ©riode limite
             if ($request->filled('date_limite_debut')) {
                 $query->whereDate('date_limite', '>=', $request->date_limite_debut);
             }
@@ -643,7 +681,7 @@ class CourrierController extends Controller
                 $query->whereDate('date_limite', '<=', $request->date_limite_fin);
             }
 
-            // Nombre de pièces
+            // Nombre de piÃ¨ces
             if ($request->filled('min_pieces')) {
                 $query->where('nombre_pieces', '>=', $request->min_pieces);
             }
@@ -658,12 +696,12 @@ class CourrierController extends Controller
                     ->whereDoesntHave('statut', fn ($q) => $q->whereIn('code', ['TRAITE', 'VALIDE', 'CLOTURE', 'REJETE', 'ARCHIVE']));
             }
 
-            // Avec pièces jointes
+            // Avec piÃ¨ces jointes
             if ($request->filled('avec_pieces') && $request->boolean('avec_pieces')) {
                 $query->has('pieces');
             }
 
-            // Avec réponses
+            // Avec rÃ©ponses
             if ($request->filled('avec_reponses') && $request->boolean('avec_reponses')) {
                 $query->has('reponses');
             }
@@ -683,9 +721,13 @@ class CourrierController extends Controller
                 $query->orderByDesc('created_at');
             }
 
+            $courriers = $query->paginate($request->get('per_page', 15));
+
+            $this->appliquerPerspective($courriers, $request->user());
+
             return $this->success(
-                $query->paginate($request->get('per_page', 15)),
-                'Résultats de la recherche avancée'
+                $courriers,
+                'RÃ©sultats de la recherche avancÃ©e'
             );
         } catch (\Throwable $e) {
             return $this->error('Erreur lors de la recherche', $e->getMessage(), 500);
@@ -724,7 +766,71 @@ class CourrierController extends Controller
                     ->count(),
             ], 'Statistiques des courriers');
         } catch (\Throwable $e) {
-            return $this->error('Erreur lors de la récupération', $e->getMessage(), 500);
+            return $this->error('Erreur lors de la rÃ©cupÃ©ration', $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Pose sur chaque courrier d'une liste paginée :
+     * - `peut_supprimer` : permission courriers.delete OU (affecté à l'unité de l'utilisateur ET non encore validé) ;
+     * - `sens_pour_moi` : sens relatif 'ENTRANT'/'SORTANT' des courriers internes selon le point de vue.
+     */
+    protected function appliquerPerspective($paginator, $user): void
+    {
+        $items = collect($paginator->items());
+        $ids = $items->pluck('id')->filter();
+
+        $peutToutSupprimer = $user->hasPermission('courriers.delete');
+        $cibles = collect();
+        $emmets = collect();
+
+        if ($ids->isNotEmpty()) {
+            $affBase = CourrierAffectation::whereIn('courrier_id', $ids);
+
+            if (! $peutToutSupprimer) {
+                $cibles = (clone $affBase)
+                    ->where(function ($q) use ($user) {
+                        $q->where('user_id', $user->id);
+                        if ($user->direction_id) {
+                            $q->orWhere('direction_id', $user->direction_id);
+                        }
+                        if ($user->departement_id) {
+                            $q->orWhere('departement_id', $user->departement_id);
+                        }
+                        if ($user->service_id) {
+                            $q->orWhere('service_id', $user->service_id);
+                        }
+                    })
+                    ->distinct()
+                    ->pluck('courrier_id')
+                    ->flip();
+            }
+
+            $emmets = (clone $affBase)
+                ->where('affecte_par', $user->id)
+                ->distinct()
+                ->pluck('courrier_id')
+                ->flip();
+        }
+
+        foreach ($items as $courrier) {
+            $recepteur = $cibles->has($courrier->id);
+            $emetteur = (int) $courrier->created_by === (int) $user->id
+                || $emmets->has($courrier->id);
+
+            $courrier->peut_supprimer = $peutToutSupprimer
+                || ($courrier->estSupprimable() && $recepteur);
+
+            $code = $courrier->typeCourrier?->code;
+            $sens = null;
+            if (in_array($code, ['INT_ENTRANT', 'INT_SORTANT'], true)) {
+                if ($recepteur && ! $emetteur) {
+                    $sens = 'ENTRANT';
+                } elseif ($emetteur) {
+                    $sens = 'SORTANT';
+                }
+            }
+            $courrier->sens_pour_moi = $sens;
         }
     }
 }

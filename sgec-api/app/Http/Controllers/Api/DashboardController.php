@@ -51,11 +51,10 @@ class DashboardController extends Controller
                 ? round((($ceMois - $moisPrecedent) / $moisPrecedent) * 100, 1)
                 : 0;
 
-            // Pièces jointes des courriers visibles
-            $visibleIds = (clone $base)->pluck('id');
-            $totalPieces = $visibleIds->isEmpty()
-                ? 0
-                : DB::table('courrier_pieces')->whereIn('courrier_id', $visibleIds)->count();
+            // Pièces jointes des courriers visibles (sous-requête, sans matérialiser les IDs)
+            $totalPieces = DB::table('courrier_pieces')
+                ->whereIn('courrier_id', (clone $base)->select('id'))
+                ->count();
 
             $utilisateursActifs = DB::table('users')->where('actif', true)->count();
 
@@ -153,7 +152,7 @@ class DashboardController extends Controller
     public function activiteRecente(Request $request)
     {
         try {
-            $limit = $request->get('limit', 10);
+            $limit = min((int) $request->get('limit', 10), 50);
 
             $activites = AuditLog::with('user')
                 ->orderByDesc('created_at')
@@ -186,6 +185,19 @@ class DashboardController extends Controller
             $user = $request->user();
             $base = Courrier::visiblePour($user)->visibleConfidentialite($user);
 
+            $rows = (clone $base)
+                ->join('type_courriers', 'courriers.type_courrier_id', '=', 'type_courriers.id')
+                ->where('courriers.created_at', '>=', now()->subMonths(11)->startOfMonth())
+                ->selectRaw('YEAR(courriers.created_at) as annee, MONTH(courriers.created_at) as mois, type_courriers.code')
+                ->selectRaw('COUNT(*) as total')
+                ->groupBy(DB::raw('YEAR(courriers.created_at)'), DB::raw('MONTH(courriers.created_at)'), 'type_courriers.code')
+                ->get();
+
+            $byKey = [];
+            foreach ($rows as $r) {
+                $byKey[$r->annee . '-' . $r->mois][$r->code] = $r->total;
+            }
+
             $mois = [];
             $entrants = [];
             $sortants = [];
@@ -195,20 +207,11 @@ class DashboardController extends Controller
                 $date = now()->subMonths($i);
                 $mois[] = $date->translatedFormat('M Y');
 
-                $entrants[] = (clone $base)->whereHas('typeCourrier', fn ($q) => $q->where('code', 'ENTRANT'))
-                    ->whereMonth('created_at', $date->month)
-                    ->whereYear('created_at', $date->year)
-                    ->count();
-
-                $sortants[] = (clone $base)->whereHas('typeCourrier', fn ($q) => $q->where('code', 'SORTANT'))
-                    ->whereMonth('created_at', $date->month)
-                    ->whereYear('created_at', $date->year)
-                    ->count();
-
-                $internes[] = (clone $base)->whereHas('typeCourrier', fn ($q) => $q->whereIn('code', ['INT_ENTRANT', 'INT_SORTANT']))
-                    ->whereMonth('created_at', $date->month)
-                    ->whereYear('created_at', $date->year)
-                    ->count();
+                $key = $date->year . '-' . $date->month;
+                $m = $byKey[$key] ?? [];
+                $entrants[] = $m['ENTRANT'] ?? 0;
+                $sortants[] = $m['SORTANT'] ?? 0;
+                $internes[] = ($m['INT_ENTRANT'] ?? 0) + ($m['INT_SORTANT'] ?? 0);
             }
 
             return $this->success([
@@ -267,7 +270,7 @@ class DashboardController extends Controller
     {
         try {
             $user = $request->user();
-            $limit = $request->get('limit', 10);
+            $limit = min((int) $request->get('limit', 10), 50);
 
             $courriers = Courrier::visiblePour($user)->visibleConfidentialite($user)
                 ->with([
@@ -297,7 +300,7 @@ class DashboardController extends Controller
                 ->where('date_limite', '<', now())
                 ->whereDoesntHave('statut', fn ($q) => $q->whereIn('code', ['TRAITE', 'VALIDE', 'CLOTURE', 'REJETE', 'ARCHIVE']))
                 ->orderBy('date_limite')
-                ->limit($request->get('limit', 20))
+                ->limit(min((int) $request->get('limit', 20), 50))
                 ->get()
                 ->map(function ($c) {
                     $c->jours_retard = now()->diffInDays($c->date_limite);
@@ -327,7 +330,7 @@ class DashboardController extends Controller
             ])
                 ->whereIn('id', $courrierIds)
                 ->orderByDesc('date_limite')
-                ->limit($request->get('limit', 20))
+                ->limit(min((int) $request->get('limit', 20), 50))
                 ->get();
 
             return $this->success([

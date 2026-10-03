@@ -60,7 +60,7 @@ class CircuitController extends Controller
             }
 
             $historiques = $courrier->historiques()
-                ->with('user')
+                ->with('user.direction')
                 ->orderBy('created_at')
                 ->get()
                 ->map(function ($h) {
@@ -68,6 +68,7 @@ class CircuitController extends Controller
                         'titre' => $h->etape ?? $h->action,
                         'description' => $h->description,
                         'auteur' => $h->user?->name ?? 'Système',
+                        'direction' => $h->user?->direction?->libelle,
                         'date' => $h->created_at->format('d/m/Y H:i'),
                         'timestamp' => $h->created_at,
                         'icone' => $this->getIcone($h->action),

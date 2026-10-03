@@ -11,11 +11,12 @@ import { Pagination } from '@/components/ui/Pagination'
 import { TableBodySkeleton } from '@/components/ui/Skeletons'
 import { courriersService, type CourrierListParams } from '@/services/courriers.service'
 import { useReferentiels } from '@/hooks/useReferentiels'
-import { formatDate } from '@/lib/utils'
+import { formatDate, typeCourrierLibelle } from '@/lib/utils'
+import { useDebounce } from '@/lib/useDebounce'
 import { useAuthStore } from '@/stores/auth.store'
 import type { Courrier, Paginated } from '@/types'
 
-const PER_PAGE = 20
+const PER_PAGE = 15
 
 const VUES = [
   { value: 'ENREGISTRE', label: 'À encoder / dispatcher (Enregistré)' },
@@ -24,17 +25,20 @@ const VUES = [
   { value: 'TRAITE', label: 'Prêts à archiver (Traité)' },
   { value: 'VALIDE', label: 'Prêts à archiver (Validé)' },
   { value: 'CLOTURE', label: 'Prêts à archiver (Clôturé)' },
+  { value: 'MES_CREATIONS', label: 'Créés par moi' },
   { value: '', label: 'Tous les statuts' },
 ]
 
 export function PointEncodagePage() {
   const referentiels = useReferentiels()
   const hasPermission = useAuthStore((state) => state.hasPermission)
+  const currentUserId = useAuthStore((state) => state.user?.id)
   const canCreate = hasPermission('courriers.create')
   const canDispatch = hasPermission('courriers.affecter')
 
   const [vue, setVue] = useState('ENREGISTRE')
   const [search, setSearch] = useState('')
+  const debouncedSearch = useDebounce(search)
   const [page, setPage] = useState(1)
   const [data, setData] = useState<Paginated<Courrier> | null>(null)
   const [loading, setLoading] = useState(true)
@@ -42,23 +46,24 @@ export function PointEncodagePage() {
   const [reloadKey, setReloadKey] = useState(0)
 
   const statutId = useMemo(() => {
-    if (!vue) return undefined
+    if (!vue || vue === 'MES_CREATIONS') return undefined
     return referentiels.statuts.find((s) => s.code === vue)?.id
   }, [vue, referentiels.statuts])
 
   const params = useMemo<CourrierListParams>(
     () => ({
       statut_id: statutId,
-      search: search || undefined,
+      search: debouncedSearch || undefined,
+      created_by: vue === 'MES_CREATIONS' ? currentUserId : undefined,
       page,
       per_page: PER_PAGE,
     }),
-    [statutId, search, page],
+    [statutId, debouncedSearch, vue, currentUserId, page],
   )
 
   useEffect(() => {
     setPage(1)
-  }, [vue, search])
+  }, [vue, debouncedSearch])
 
   useEffect(() => {
     if (vue && !statutId) return
@@ -68,9 +73,7 @@ export function PointEncodagePage() {
       .list(params)
       .then((res) => {
         if (active) {
-          setData((prev) =>
-            JSON.stringify(prev) === JSON.stringify(res.data) ? prev : res.data,
-          )
+          setData(res.data)
           setError(null)
         }
       })
@@ -85,9 +88,9 @@ export function PointEncodagePage() {
     }
   }, [params, statutId, vue, reloadKey])
 
-  // Rafraîchissement automatique (temps réel)
+  // Rafraîchissement automatique (temps réel) — uniquement quand l'onglet est visible
   useEffect(() => {
-    const timer = setInterval(() => { if (document.visibilityState === 'visible') setReloadKey((value) => value + 1) }, 60000)
+    const timer = setInterval(() => { if (document.visibilityState === 'visible') setReloadKey((value) => value + 1) }, 120000)
     return () => clearInterval(timer)
   }, [])
 
@@ -156,7 +159,7 @@ export function PointEncodagePage() {
           <table className="table-custom w-full">
             <thead>
               <tr>
-                <th>Matricule</th>
+                <th>Numéro</th>
                 <th>Type</th>
                 <th>Objet</th>
                 <th>Expéditeur</th>
@@ -186,7 +189,7 @@ export function PointEncodagePage() {
                         {courrier.numero}
                       </Link>
                     </td>
-                    <td className="text-slate-500">{courrier.type_courrier?.libelle ?? '—'}</td>
+                    <td className="text-slate-500">{typeCourrierLibelle(courrier)}</td>
                     <td className="max-w-[240px]">{courrier.objet}</td>
                     <td className="text-slate-600">{courrier.expediteur?.nom ?? '—'}</td>
                     <td>{formatDate(courrier.date_reception)}</td>
@@ -243,7 +246,7 @@ export function PointEncodagePage() {
       <div className="mt-4 flex items-center gap-2 text-[0.75rem] text-slate-400">
         <Share2 className="h-3.5 w-3.5" />
         Circuit : encodage → dispatching (affectation) → traitement → validation → archivage.
-        <Badge tone="info">Temps réel : rafraîchissement 10 s</Badge>
+        <Badge tone="info">Temps réel : rafraîchissement 2 min</Badge>
       </div>
     </div>
   )

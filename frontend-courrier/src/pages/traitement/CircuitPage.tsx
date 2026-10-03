@@ -133,7 +133,8 @@ export function CircuitPage() {
                     <p className="mt-0.5 text-[0.83rem] text-slate-600">{etape.description}</p>
                   )}
                   <span className="mt-1 block text-[0.75rem] text-slate-400">
-                    {etape.user ?? 'Système'} • {formatDate(etape.date, true)}
+                    {etape.user ?? 'Système'}
+                    {etape.direction ? ` — ${etape.direction}` : ''} • {formatDate(etape.date, true)}
                   </span>
                 </div>
               </div>
@@ -179,6 +180,7 @@ export function CircuitPage() {
                         )}
                         <span className="mt-1 block text-[0.75rem] text-slate-400">
                           {item.user?.name ?? 'Système'}
+                          {item.direction ? ` — ${item.direction}` : ''}
                           {item.adresse_ip ? ` • ${item.adresse_ip}` : ''}
                         </span>
                       </div>

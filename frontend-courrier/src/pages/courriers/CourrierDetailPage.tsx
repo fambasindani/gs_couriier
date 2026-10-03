@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   AlertTriangle,
@@ -25,17 +25,20 @@ import { Card } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Badge, ConfidentialiteBadge, StatutBadge } from '@/components/ui/Badge'
-import { Field, Input, Select } from '@/components/ui/Field'
+import { Field, Input, Select, Textarea } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { ArchiveCourrierModal } from '@/components/archives/ArchiveCourrierModal'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { TimelineSkeleton } from '@/components/ui/Skeletons'
 import { courriersService } from '@/services/courriers.service'
 import { piecesService } from '@/services/pieces.service'
-import { affectationsService } from '@/services/traitement.service'
+import { affectationsService, annotationsService, validationsService } from '@/services/traitement.service'
 import { lettreModelesService } from '@/services/lettres.service'
+import { projetsLettresService } from '@/services/projetsLettres.service'
 import { nomFichierLettre, telechargerBlob } from '@/lib/lettreFichiers'
-import { formatDate } from '@/lib/utils'
+import { formatDate, typeCourrierLibelle } from '@/lib/utils'
+import { useDebounce } from '@/lib/useDebounce'
 import { useAuthStore } from '@/stores/auth.store'
 import { useConfirm } from '@/stores/confirm.store'
 import { useToast } from '@/stores/toast.store'
@@ -48,6 +51,7 @@ import type {
   CourrierPiece,
   LettreGeneree,
   LettreModele,
+  ProjetLettre,
   TimelineItem,
 } from '@/types'
 
@@ -93,6 +97,17 @@ export function CourrierDetailPage() {
   const [unlinkOpen, setUnlinkOpen] = useState(false)
   const [pieceToDelete, setPieceToDelete] = useState<CourrierPiece | null>(null)
   const [confirmBusy, setConfirmBusy] = useState(false)
+
+  const [annotationOpen, setAnnotationOpen] = useState(false)
+  const [annotationForm, setAnnotationForm] = useState({ annotation: '', date_limite: '' })
+  const [annotationSaving, setAnnotationSaving] = useState(false)
+  const [annotationError, setAnnotationError] = useState<string | null>(null)
+
+  const [validationOpen, setValidationOpen] = useState(false)
+  const [validationForm, setValidationForm] = useState({ decision: 'VISE', commentaire: '' })
+  const [validationSaving, setValidationSaving] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
+
   const [lettreOpen, setLettreOpen] = useState(false)
   const [lettreModeles, setLettreModeles] = useState<LettreModele[]>([])
   const [lettreModeleId, setLettreModeleId] = useState('')
@@ -104,6 +119,8 @@ export function CourrierDetailPage() {
   const [linkQuery, setLinkQuery] = useState('')
   const [linkResults, setLinkResults] = useState<Courrier[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
+  const importInputRef = useRef<HTMLInputElement>(null)
+  const importTargetRef = useRef<ProjetLettre | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -114,9 +131,7 @@ export function CourrierDetailPage() {
       .show(id)
       .then((res) => {
         if (active) {
-          setCourrier((prev) =>
-            JSON.stringify(prev) === JSON.stringify(res.data) ? prev : res.data,
-          )
+          setCourrier(res.data)
           setError(null)
         }
       })
@@ -145,8 +160,10 @@ export function CourrierDetailPage() {
     }
   }, [id, reloadKey])
 
+  const debouncedLinkQuery = useDebounce(linkQuery)
+
   useEffect(() => {
-    const term = linkQuery.trim()
+    const term = debouncedLinkQuery.trim()
     if (term.length < 2) {
       setLinkResults([])
       return
@@ -163,39 +180,100 @@ export function CourrierDetailPage() {
     return () => {
       active = false
     }
-  }, [linkQuery, id])
+  }, [debouncedLinkQuery, id])
 
   const pieces = courrier?.pieces ?? []
 
   const actions = useMemo(
     () => ({
       modifier: hasPermission('courriers.update'),
-      supprimer: hasPermission('courriers.delete'),
+      supprimer: hasPermission('courriers.delete') || courrier?.peut_supprimer === true,
       affecter: hasPermission('courriers.affecter'),
       annuler: hasPermission('courriers.annuler'),
+      annoter: hasPermission('courriers.annoter'),
+      valider: hasPermission('courriers.valider'),
     }),
-    [hasPermission],
+    [hasPermission, courrier?.peut_supprimer],
   )
 
   const isArchived = courrier?.statut?.code === 'ARCHIVE'
 
   // Rafraîchissement automatique (accusé de réception / traçabilité en temps réel)
   useEffect(() => {
-    const timer = setInterval(() => { if (document.visibilityState === 'visible') setReloadKey((value) => value + 1) }, 60000)
+    const timer = setInterval(() => { if (document.visibilityState === 'visible') setReloadKey((value) => value + 1) }, 120000)
     return () => clearInterval(timer)
   }, [])
 
   const refresh = () => setReloadKey((value) => value + 1)
 
-  const handleArchive = async () => {
+  const handleAddInstruction = async () => {
     if (!courrier) return
-    setActionError(null)
+    if (!annotationForm.annotation.trim()) {
+      setAnnotationError("Saisissez le texte de l'instruction.")
+      return
+    }
+    setAnnotationError(null)
+    setAnnotationSaving(true)
     try {
-      await courriersService.archiver(courrier.id)
-      setArchiveOpen(false)
+      await annotationsService.create({
+        courrier_id: courrier.id,
+        annotation: annotationForm.annotation.trim(),
+        date_limite: annotationForm.date_limite || null,
+        etat: 'EN_ATTENTE',
+      })
+      setAnnotationOpen(false)
+      setAnnotationForm({ annotation: '', date_limite: '' })
       refresh()
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Erreur lors de l'archivage.")
+      setAnnotationError(
+        err instanceof Error ? err.message : "Erreur lors de l'ajout de l'instruction.",
+      )
+    } finally {
+      setAnnotationSaving(false)
+    }
+  }
+
+  const handleAddValidation = async () => {
+    if (!courrier) return
+    setValidationError(null)
+    setValidationSaving(true)
+    try {
+      await validationsService.create({
+        courrier_id: courrier.id,
+        decision: validationForm.decision as 'VISE' | 'VALIDE' | 'REJETE',
+        commentaire: validationForm.commentaire.trim() || null,
+      })
+      setValidationOpen(false)
+      setValidationForm({ decision: 'VISE', commentaire: '' })
+      refresh()
+    } catch (err) {
+      setValidationError(
+        err instanceof Error ? err.message : "Erreur lors de l'ajout de la validation.",
+      )
+    } finally {
+      setValidationSaving(false)
+    }
+  }
+
+  const handleImporterClick = (projet: ProjetLettre) => {
+    importTargetRef.current = projet
+    if (importInputRef.current) {
+      importInputRef.current.value = ''
+      importInputRef.current.click()
+    }
+  }
+
+  const handleImporterFichier = async (event: ChangeEvent<HTMLInputElement>) => {
+    const fichier = event.target.files?.[0]
+    event.target.value = ''
+    const projet = importTargetRef.current
+    if (!fichier || !projet) return
+    try {
+      await projetsLettresService.importerVersion(projet.id, fichier, 'Imported depuis le courrier')
+      toast(`Version importée dans ${projet.reference_projet}`)
+      refresh()
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Erreur lors de l'import de la lettre.")
     }
   }
 
@@ -581,15 +659,20 @@ export function CourrierDetailPage() {
                 Annuler
               </Button>
             )}
-            {actions.supprimer && (
-              <Button
+            <Button
                 variant="danger"
                 icon={<Trash2 className="h-4 w-4" />}
-                onClick={() => setDeleteOpen(true)}
+                onClick={() => {
+                  if (actions.supprimer) {
+                    setActionError(null)
+                    setDeleteOpen(true)
+                  } else {
+                    setActionError("Vous n'avez pas la permission de supprimer cet enregistrement.")
+                  }
+                }}
               >
                 Supprimer
               </Button>
-            )}
           </>
         }
       />
@@ -610,7 +693,7 @@ export function CourrierDetailPage() {
       {/* En-tête */}
       <Card className="p-5">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone="primary">{courrier.type_courrier?.libelle ?? 'Type'}</Badge>
+          <Badge tone="primary">{typeCourrierLibelle(courrier)}</Badge>
           <StatutBadge code={courrier.statut?.code} libelle={courrier.statut?.libelle} />
           <ConfidentialiteBadge value={courrier.confidentialite} />
           {courrier.priorite && <Badge tone="warning">{courrier.priorite.libelle}</Badge>}
@@ -639,7 +722,7 @@ export function CourrierDetailPage() {
         <Card className="mt-5 p-5">
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
             <InfoRow label="Référence externe" value={courrier.reference_externe} />
-            <InfoRow label="Type" value={courrier.type_courrier?.libelle} />
+            <InfoRow label="Type" value={typeCourrierLibelle(courrier)} />
             <InfoRow label="Catégorie" value={courrier.categorie?.libelle} />
             <InfoRow label="Priorité" value={courrier.priorite?.libelle} />
             <InfoRow label="Statut" value={courrier.statut?.libelle} />
@@ -792,7 +875,23 @@ export function CourrierDetailPage() {
           </Card>
 
           <Card className="p-5">
-            <h6 className="section-title">Instructions ({(courrier.annotations ?? []).length})</h6>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h6 className="section-title mb-0">
+                Instructions ({(courrier.annotations ?? []).length})
+              </h6>
+              {actions.annoter && (
+                <Button
+                  variant="outline"
+                  icon={<Plus className="h-4 w-4" />}
+                  onClick={() => {
+                    setAnnotationError(null)
+                    setAnnotationOpen(true)
+                  }}
+                >
+                  Ajouter une instruction
+                </Button>
+              )}
+            </div>
             {(courrier.annotations ?? []).length === 0 ? (
               <p className="text-[0.83rem] text-slate-400">Aucune instruction.</p>
             ) : (
@@ -811,7 +910,25 @@ export function CourrierDetailPage() {
           </Card>
 
           <Card className="p-5">
-            <h6 className="section-title">Validations ({(courrier.validations ?? []).length})</h6>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h6 className="section-title mb-0">
+                Validations ({(courrier.validations ?? []).length})
+              </h6>
+              <Button
+                  variant="outline"
+                  icon={<Plus className="h-4 w-4" />}
+                  onClick={() => {
+                    if (actions.valider) {
+                      setValidationError(null)
+                      setValidationOpen(true)
+                    } else {
+                      setActionError("Vous n'avez pas la permission d'ajouter une validation.")
+                    }
+                  }}
+                >
+                  Ajouter une validation
+                </Button>
+            </div>
             {(courrier.validations ?? []).length === 0 ? (
               <p className="text-[0.83rem] text-slate-400">Aucune validation.</p>
             ) : (
@@ -839,9 +956,19 @@ export function CourrierDetailPage() {
           </Card>
 
           <Card className="p-5">
-            <h6 className="section-title">
-              Projets de lettres ({(courrier.projets ?? []).length + (courrier.projets_sortants ?? []).length})
-            </h6>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h6 className="section-title mb-0">
+                Projets de lettres (
+                {(courrier.projets ?? []).length + (courrier.projets_sortants ?? []).length})
+              </h6>
+              {hasPermission('projets.create') && (
+                <Link to={`/projets-lettres?courrier_id=${courrier.id}`}>
+                  <Button variant="outline" icon={<Plus className="h-4 w-4" />}>
+                    Nouveau projet
+                  </Button>
+                </Link>
+              )}
+            </div>
             {(courrier.projets ?? []).length === 0 && (courrier.projets_sortants ?? []).length === 0 ? (
               <p className="text-[0.83rem] text-slate-400">Aucun projet de lettre lié.</p>
             ) : (
@@ -855,9 +982,20 @@ export function CourrierDetailPage() {
                       >
                         {projet.reference_projet}
                       </Link>
-                      <Badge tone={projetStatutTone(projet.statut)}>
-                        {projetStatutLabel(projet.statut)}
-                      </Badge>
+                      <span className="flex items-center gap-1.5">
+                        <Badge tone={projetStatutTone(projet.statut)}>
+                          {projetStatutLabel(projet.statut)}
+                        </Badge>
+                        {hasPermission('projets.update') && (
+                          <button
+                            onClick={() => handleImporterClick(projet)}
+                            className="rounded-md border border-line bg-white p-1.5 text-slate-500 hover:bg-slate-50"
+                            title="Importer une lettre (Word)"
+                          >
+                            <Upload className="h-4 w-4" />
+                          </button>
+                        )}
+                      </span>
                     </div>
                     <span className="mt-1 block text-[0.78rem] text-slate-500">{projet.objet}</span>
                     <span className="mt-0.5 block text-[0.72rem] text-slate-400">
@@ -887,7 +1025,8 @@ export function CourrierDetailPage() {
                   <span className="block font-semibold text-ink">{item.titre}</span>
                   <span className="block text-[0.78rem] text-slate-500">{item.description}</span>
                   <span className="text-[0.75rem] text-slate-400">
-                    {item.auteur} • {item.date}
+                    {item.auteur}
+                    {item.direction ? ` — ${item.direction}` : ''} • {item.date}
                   </span>
                 </div>
               ))}
@@ -929,25 +1068,13 @@ export function CourrierDetailPage() {
         </span>
       </Card>
 
-      {/* Modal archivage */}
-      <Modal
+      {/* Modal archivage — nouvelle archive pré-remplie depuis le courrier */}
+      <ArchiveCourrierModal
         open={archiveOpen}
-        title={`Archiver ${courrier.numero}`}
-        size="sm"
+        courrier={courrier}
         onClose={() => setArchiveOpen(false)}
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setArchiveOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={handleArchive}>Archiver</Button>
-          </>
-        }
-      >
-        <p className="text-[0.85rem] text-slate-600">
-          Le courrier sera marqué comme archivé et une cote d'archive sera générée.
-        </p>
-      </Modal>
+        onSuccess={refresh}
+      />
 
       {/* Modal liaison */}
       <Modal
@@ -991,27 +1118,21 @@ export function CourrierDetailPage() {
       </Modal>
 
       {/* Modal suppression */}
-      <Modal
+      <ConfirmDialog
         open={deleteOpen}
         title="Supprimer le courrier"
-        size="sm"
-        onClose={() => setDeleteOpen(false)}
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Annuler
-            </Button>
-            <Button variant="danger" onClick={handleDelete}>
-              Supprimer
-            </Button>
-          </>
+        tone="danger"
+        confirmLabel="Supprimer"
+        loading={confirmBusy}
+        message={
+          <p>
+            Confirmez-vous la suppression définitive de{' '}
+            <span className="font-semibold text-ink">{courrier?.numero}</span> ?
+          </p>
         }
-      >
-        <p className="text-[0.85rem] text-slate-600">
-          Confirmez-vous la suppression définitive de{' '}
-          <span className="font-semibold text-ink">{courrier.numero}</span> ?
-        </p>
-      </Modal>
+        onConfirm={handleDelete}
+        onClose={() => setDeleteOpen(false)}
+      />
 
       <ConfirmDialog
         open={unlinkOpen}
@@ -1138,6 +1259,105 @@ export function CourrierDetailPage() {
               </pre>
             </div>
           )}
+        </div>
+      </Modal>
+
+      {/* Import (fichier Word) d'un projet de lettre */}
+      <input
+        ref={importInputRef}
+        type="file"
+        accept=".doc,.docx"
+        hidden
+        onChange={handleImporterFichier}
+      />
+
+      {/* Nouvelle instruction */}
+      <Modal
+        open={annotationOpen}
+        title="Nouvelle instruction"
+        onClose={() => setAnnotationOpen(false)}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setAnnotationOpen(false)} disabled={annotationSaving}>
+              Annuler
+            </Button>
+            <Button onClick={() => void handleAddInstruction()} disabled={annotationSaving}>
+              {annotationSaving ? 'Ajout…' : 'Ajouter'}
+            </Button>
+          </>
+        }
+      >
+        {annotationError && (
+          <div className="mb-3 rounded-lg border border-danger/20 bg-danger/5 px-3 py-2 text-[0.82rem] text-danger">
+            {annotationError}
+          </div>
+        )}
+        <div className="space-y-4">
+          <Field label="Instruction" required>
+            <Textarea
+              value={annotationForm.annotation}
+              onChange={(event) =>
+                setAnnotationForm({ ...annotationForm, annotation: event.target.value })
+              }
+              rows={4}
+              placeholder="Consigne donnée au service (ex. : traiter avant le 15...)"
+            />
+          </Field>
+          <Field label="Échéance (optionnelle)">
+            <Input
+              type="datetime-local"
+              value={annotationForm.date_limite}
+              onChange={(event) =>
+                setAnnotationForm({ ...annotationForm, date_limite: event.target.value })
+              }
+            />
+          </Field>
+        </div>
+      </Modal>
+
+      {/* Nouvelle validation */}
+      <Modal
+        open={validationOpen}
+        title="Nouvelle validation"
+        onClose={() => setValidationOpen(false)}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setValidationOpen(false)} disabled={validationSaving}>
+              Annuler
+            </Button>
+            <Button onClick={() => void handleAddValidation()} disabled={validationSaving}>
+              {validationSaving ? 'Ajout…' : 'Valider'}
+            </Button>
+          </>
+        }
+      >
+        {validationError && (
+          <div className="mb-3 rounded-lg border border-danger/20 bg-danger/5 px-3 py-2 text-[0.82rem] text-danger">
+            {validationError}
+          </div>
+        )}
+        <div className="space-y-4">
+          <Field label="Décision" required>
+            <Select
+              value={validationForm.decision}
+              onChange={(event) =>
+                setValidationForm({ ...validationForm, decision: event.target.value })
+              }
+            >
+              <option value="VISE">Viser</option>
+              <option value="VALIDE">Valider</option>
+              <option value="REJETE">Rejeter</option>
+            </Select>
+          </Field>
+          <Field label="Commentaire">
+            <Textarea
+              value={validationForm.commentaire}
+              onChange={(event) =>
+                setValidationForm({ ...validationForm, commentaire: event.target.value })
+              }
+              rows={3}
+            />
+          </Field>
         </div>
       </Modal>
     </div>

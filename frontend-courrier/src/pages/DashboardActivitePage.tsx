@@ -11,7 +11,7 @@ import { mockActivite } from '@/data/mock'
 import type { ActiviteLog } from '@/types'
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
-const LIMITS = [10, 25, 50, 100]
+const LIMITS = [10, 25, 50]
 
 export function DashboardActivitePage() {
   const [logs, setLogs] = useState<ActiviteLog[]>([])

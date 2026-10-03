@@ -81,10 +81,15 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       window.dispatchEvent(new CustomEvent('auth:unauthorized'))
     }
 
+    // Suppression refusée : message explicite et uniforme côté utilisateur.
+    const isDelete = ((rest.method ?? 'GET') as string).toUpperCase() === 'DELETE'
+
     const message =
-      payload && typeof payload === 'object' && 'message' in payload
-        ? String((payload as { message: unknown }).message)
-        : 'Une erreur est survenue.'
+      isDelete && response.status === 403
+        ? "Vous n'avez pas la permission de supprimer cet enregistrement."
+        : payload && typeof payload === 'object' && 'message' in payload
+          ? String((payload as { message: unknown }).message)
+          : 'Une erreur est survenue.'
 
     const errors =
       payload && typeof payload === 'object' && 'errors' in payload

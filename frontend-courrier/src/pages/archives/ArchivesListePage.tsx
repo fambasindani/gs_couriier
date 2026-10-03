@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge, type BadgeTone } from '@/components/ui/Badge'
 import { Field, Input, Select, Textarea } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Pagination } from '@/components/ui/Pagination'
 import { TableBodySkeleton } from '@/components/ui/Skeletons'
@@ -511,28 +512,21 @@ export function ArchivesListePage() {
         </div>
       </Modal>
 
-      <Modal
+      <ConfirmDialog
         open={Boolean(deleteTarget)}
-        title="Supprimer l’archive"
-        size="sm"
-        onClose={() => setDeleteTarget(null)}
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              Annuler
-            </Button>
-            <Button variant="danger" onClick={handleDelete}>
-              Supprimer
-            </Button>
-          </>
+        title="Supprimer l'archive"
+        tone="danger"
+        confirmLabel="Supprimer"
+        message={
+          <p>
+            Confirmez-vous la suppression de l'archive{' '}
+            <span className="font-semibold text-ink">{deleteTarget?.cote_archive}</span> ? Le
+            courrier lié sera désarchivé.
+          </p>
         }
-      >
-        <p className="text-[0.85rem] text-slate-600">
-          Confirmez-vous la suppression de l’archive{' '}
-          <span className="font-semibold text-ink">{deleteTarget?.cote_archive}</span> ? Le courrier
-          lié sera désarchivé.
-        </p>
-      </Modal>
+        onConfirm={handleDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

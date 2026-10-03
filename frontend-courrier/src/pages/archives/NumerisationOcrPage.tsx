@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Select } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { Pagination } from '@/components/ui/Pagination'
 import { TableBodySkeleton } from '@/components/ui/Skeletons'
 import { piecesService } from '@/services/pieces.service'
 import { formatDate } from '@/lib/utils'
@@ -240,27 +241,14 @@ export function NumerisationOcrPage() {
         </div>
 
         {filtered.length > CLIENT_PER_PAGE && (
-          <div className="mt-4 flex items-center justify-between text-[0.8rem] text-slate-500">
-            <span>
-              {filtered.length} pièce(s) — page {page} / {totalPages}
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage((value) => Math.max(1, value - 1))}
-                disabled={page <= 1}
-                className="rounded-lg border border-line bg-white px-3 py-1.5 disabled:opacity-40"
-              >
-                Précédent
-              </button>
-              <button
-                onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-                disabled={page >= totalPages}
-                className="rounded-lg border border-line bg-white px-3 py-1.5 disabled:opacity-40"
-              >
-                Suivant
-              </button>
-            </div>
-          </div>
+          <Pagination
+            page={page}
+            lastPage={totalPages}
+            total={filtered.length}
+            from={(page - 1) * CLIENT_PER_PAGE + 1}
+            to={Math.min(page * CLIENT_PER_PAGE, filtered.length)}
+            onChange={setPage}
+          />
         )}
       </Card>
 

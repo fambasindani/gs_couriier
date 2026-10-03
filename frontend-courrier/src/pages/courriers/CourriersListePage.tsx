@@ -5,15 +5,16 @@ import { Card } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { ConfidentialiteBadge, StatutBadge } from '@/components/ui/Badge'
-import { Field, Input, Select, Textarea } from '@/components/ui/Field'
-import { Modal } from '@/components/ui/Modal'
+import { Input, Select } from '@/components/ui/Field'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { ArchiveCourrierModal } from '@/components/archives/ArchiveCourrierModal'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Pagination } from '@/components/ui/Pagination'
 import { TableBodySkeleton } from '@/components/ui/Skeletons'
 import { courriersService, type CourrierListParams } from '@/services/courriers.service'
 import { useReferentiels } from '@/hooks/useReferentiels'
 import { useDebounce } from '@/lib/useDebounce'
-import { formatDate } from '@/lib/utils'
+import { formatDate, typeCourrierLibelle } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
 import { mockCourrierPage } from '@/data/mock'
 import type { Courrier, Paginated } from '@/types'
@@ -50,7 +51,6 @@ export function CourriersListePage() {
   const [reloadKey, setReloadKey] = useState(0)
 
   const [archiveTarget, setArchiveTarget] = useState<Courrier | null>(null)
-  const [archiveForm, setArchiveForm] = useState({ duree: '5', observation: '' })
   const [deleteTarget, setDeleteTarget] = useState<Courrier | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
@@ -123,22 +123,6 @@ export function CourriersListePage() {
     setDateFin('')
   }
 
-  const handleArchive = async () => {
-    if (!archiveTarget) return
-    setActionError(null)
-    try {
-      await courriersService.archiver(archiveTarget.id, {
-        duree_conservation_ans: archiveForm.duree ? Number(archiveForm.duree) : null,
-        observation: archiveForm.observation || null,
-      })
-      setArchiveTarget(null)
-      setArchiveForm({ duree: '5', observation: '' })
-      setReloadKey((value) => value + 1)
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Erreur lors de l'archivage.")
-    }
-  }
-
   const handleDelete = async () => {
     if (!deleteTarget) return
     setActionError(null)
@@ -148,6 +132,15 @@ export function CourriersListePage() {
       setReloadKey((value) => value + 1)
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Erreur lors de la suppression.')
+    }
+  }
+
+  const handleSupprimerClick = (courrier: Courrier) => {
+    if (hasPermission('courriers.delete') || courrier.peut_supprimer === true) {
+      setActionError(null)
+      setDeleteTarget(courrier)
+    } else {
+      setActionError("Vous n'avez pas la permission de supprimer cet enregistrement.")
     }
   }
 
@@ -281,7 +274,7 @@ export function CourriersListePage() {
                         {courrier.numero}
                       </Link>
                     </td>
-                    <td className="text-slate-500">{courrier.type_courrier?.libelle ?? '—'}</td>
+                    <td className="text-slate-500">{typeCourrierLibelle(courrier)}</td>
                     <td>
                       <span className="block">{courrier.expediteur?.nom ?? '—'}</span>
                       <span className="text-[0.72rem] text-slate-400">
@@ -324,15 +317,13 @@ export function CourriersListePage() {
                             </button>
                           </>
                         )}
-                        {hasPermission('courriers.delete') && (
-                          <button
-                            onClick={() => setDeleteTarget(courrier)}
-                            className="rounded-md border border-line bg-white p-1.5 text-danger hover:bg-danger/5"
-                            title="Supprimer"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => handleSupprimerClick(courrier)}
+                          className="rounded-md border border-line bg-white p-1.5 text-danger hover:bg-danger/5"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -353,66 +344,33 @@ export function CourriersListePage() {
         )}
       </Card>
 
-      {/* Modal archivage */}
-      <Modal
+      {/* Modal archivage — nouvelle archive pré-remplie depuis le courrier */}
+      <ArchiveCourrierModal
         open={Boolean(archiveTarget)}
-        title={`Archiver ${archiveTarget?.numero ?? ''}`}
+        courrier={archiveTarget}
         onClose={() => setArchiveTarget(null)}
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setArchiveTarget(null)}>
-              Annuler
-            </Button>
-            <Button onClick={handleArchive}>Archiver</Button>
-          </>
-        }
-      >
-        {actionError && <p className="mb-3 text-[0.82rem] text-danger">{actionError}</p>}
-        <div className="space-y-3">
-          <Field label="Durée de conservation (années)">
-            <Input
-              type="number"
-              min={1}
-              max={100}
-              value={archiveForm.duree}
-              onChange={(event) => setArchiveForm({ ...archiveForm, duree: event.target.value })}
-            />
-          </Field>
-          <Field label="Observation">
-            <Textarea
-              value={archiveForm.observation}
-              onChange={(event) =>
-                setArchiveForm({ ...archiveForm, observation: event.target.value })
-              }
-            />
-          </Field>
-        </div>
-      </Modal>
+        onSuccess={() => setReloadKey((value) => value + 1)}
+      />
 
       {/* Modal suppression */}
-      <Modal
+      <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Supprimer le courrier"
-        size="sm"
-        onClose={() => setDeleteTarget(null)}
-        footer={
+        tone="danger"
+        confirmLabel="Supprimer"
+        message={
           <>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              Annuler
-            </Button>
-            <Button variant="danger" onClick={handleDelete}>
-              Supprimer
-            </Button>
+            {actionError && <p className="mb-3 text-[0.82rem] text-danger">{actionError}</p>}
+            <p>
+              Confirmez-vous la suppression définitive du courrier{' '}
+              <span className="font-semibold text-ink">{deleteTarget?.numero}</span> ? Cette action
+              est irréversible.
+            </p>
           </>
         }
-      >
-        {actionError && <p className="mb-3 text-[0.82rem] text-danger">{actionError}</p>}
-        <p className="text-[0.85rem] text-slate-600">
-          Confirmez-vous la suppression définitive du courrier{' '}
-          <span className="font-semibold text-ink">{deleteTarget?.numero}</span> ? Cette action est
-          irréversible.
-        </p>
-      </Modal>
+        onConfirm={handleDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

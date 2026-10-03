@@ -78,6 +78,10 @@ export interface Courrier {
   observation?: string | null
   /** Ajouté par /courriers/en-retard. */
   jours_retard?: number | null
+  /** Flag calculé côté API : l'utilisateur connecté peut supprimer ce courrier. */
+  peut_supprimer?: boolean
+  /** Sens relatif (courriers internes uniquement) : 'ENTRANT' si affecté à mon unité, 'SORTANT' sinon. */
+  sens_pour_moi?: 'ENTRANT' | 'SORTANT' | null
 }
 
 export interface DashboardOverview {
@@ -150,6 +154,7 @@ export interface UniteStructure {
   id: number
   code?: string
   libelle: string
+  description?: string | null
   direction_id?: number
   departement_id?: number
   direction?: UniteStructure | null
@@ -188,6 +193,8 @@ export interface CourrierAffectation {
   date_traitement?: string | null
   date_accuse_reception?: string | null
   statut: 'AFFECTE' | 'PRIS_EN_CHARGE' | 'EN_TRAITEMENT' | 'TRAITE' | 'REJETE'
+  /** Flag calculé côté API : le service destinataire (et non l'émetteur) peut agir. */
+  peut_actionner?: boolean
 }
 
 export interface CourrierAnnotation {
@@ -226,6 +233,8 @@ export interface TimelineItem {
   titre: string
   description?: string | null
   auteur: string
+  /** Direction responsable de l'action (celle de l'auteur). */
+  direction?: string | null
   date: string
   timestamp: string
   icone?: string
@@ -245,15 +254,10 @@ export interface CourrierDetail extends Courrier {
   historiques?: CourrierHistorique[]
 }
 
-export interface CourrierStats {
-  total: number
-  en_retard: number
-  avec_parent: number
-  avec_reponses: number
-  avec_pieces: number
-  aujourd_hui: number
-  cette_semaine: number
-  ce_mois: number
+/** Retourné par /courriers/{id}/lier : un courrier avec ses liens (pas le détail complet). */
+export interface CourrierLie extends Courrier {
+  parent?: Pick<Courrier, 'id' | 'numero' | 'objet' | 'date_reception'> | null
+  reponses?: Courrier[]
 }
 
 export interface CourrierLies {
@@ -274,6 +278,8 @@ export interface CircuitEtape {
   etape?: string | null
   description?: string | null
   user?: { id: number; name: string } | null
+  /** Direction responsable de l'action (celle de l'auteur). */
+  direction?: string | null
   date: string
   adresse_ip?: string | null
 }
@@ -295,6 +301,8 @@ export interface EtapeActuelle {
   etape?: string | null
   description?: string | null
   user?: string | null
+  /** Direction responsable de l'action (celle de l'auteur). */
+  direction?: string | null
   date: string
 }
 

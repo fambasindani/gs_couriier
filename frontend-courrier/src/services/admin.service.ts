@@ -47,7 +47,6 @@ export const permissionsService = {
 export const structureService = {
   directions: (params: Query = {}) =>
     http.get<ApiEnvelope<Paginated<UniteStructure>>>('/directions', { query: params }),
-  directionsAll: () => fetchAll<UniteStructure>('/directions'),
   createDirection: (payload: Record<string, unknown>) =>
     http.post<ApiEnvelope<UniteStructure>>('/directions', payload),
   updateDirection: (id: number | string, payload: Record<string, unknown>) =>
@@ -56,7 +55,6 @@ export const structureService = {
 
   departements: (params: Query = {}) =>
     http.get<ApiEnvelope<Paginated<UniteStructure>>>('/departements', { query: params }),
-  departementsAll: () => fetchAll<UniteStructure>('/departements'),
   createDepartement: (payload: Record<string, unknown>) =>
     http.post<ApiEnvelope<UniteStructure>>('/departements', payload),
   updateDepartement: (id: number | string, payload: Record<string, unknown>) =>
@@ -75,7 +73,6 @@ export const structureService = {
 export const auditService = {
   list: (params: Query = {}) =>
     http.get<ApiEnvelope<Paginated<AuditLog>>>('/audit-logs', { query: params }),
-  show: (id: number | string) => http.get<ApiEnvelope<AuditLog>>(`/audit-logs/${id}`),
   remove: (id: number | string) => http.delete<ApiEnvelope<null>>(`/audit-logs/${id}`),
 }
 

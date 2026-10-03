@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Field, Input, Select, Textarea } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { Pagination } from '@/components/ui/Pagination'
 import { TableBodySkeleton } from '@/components/ui/Skeletons'
 import { lettreModelesService } from '@/services/lettres.service'
 import { useReferentiels } from '@/hooks/useReferentiels'
@@ -278,25 +280,14 @@ export function LettreModelesPage() {
         </div>
 
         {data && data.last_page > 1 && (
-          <div className="mt-4 flex justify-center">
-            <button
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-              disabled={data.current_page <= 1}
-              className="mx-1 rounded-lg border border-line bg-white px-3 py-1.5 text-[0.8rem] disabled:opacity-40"
-            >
-              Précédent
-            </button>
-            <span className="mx-3 py-1.5 text-[0.8rem] text-slate-500">
-              {data.current_page} / {data.last_page}
-            </span>
-            <button
-              onClick={() => setPage((value) => Math.min(data.last_page, value + 1))}
-              disabled={data.current_page >= data.last_page}
-              className="mx-1 rounded-lg border border-line bg-white px-3 py-1.5 text-[0.8rem] disabled:opacity-40"
-            >
-              Suivant
-            </button>
-          </div>
+          <Pagination
+            page={data.current_page}
+            lastPage={data.last_page}
+            total={data.total}
+            from={data.from}
+            to={data.to}
+            onChange={setPage}
+          />
         )}
       </Card>
 
@@ -364,26 +355,19 @@ export function LettreModelesPage() {
         </div>
       </Modal>
 
-      <Modal
+      <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Supprimer le modèle"
-        size="sm"
-        onClose={() => setDeleteTarget(null)}
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              Annuler
-            </Button>
-            <Button variant="danger" onClick={handleDelete}>
-              Supprimer
-            </Button>
-          </>
+        tone="danger"
+        confirmLabel="Supprimer"
+        message={
+          <p>
+            Supprimer le modèle <span className="font-semibold text-ink">{deleteTarget?.nom}</span> ?
+          </p>
         }
-      >
-        <p className="text-[0.85rem] text-slate-600">
-          Supprimer le modèle <span className="font-semibold text-ink">{deleteTarget?.nom}</span> ?
-        </p>
-      </Modal>
+        onConfirm={handleDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

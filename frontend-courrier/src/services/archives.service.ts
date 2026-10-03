@@ -19,8 +19,12 @@ export interface ArchivePayload {
   date_periode?: string | null
   duree_conservation_ans?: number | null
   date_versement?: string | null
-  statut_archive?: string
   observation?: string | null
+}
+
+/** Seul update accepte statut_archive (le backend force 'ACTIF' à la création). */
+export interface ArchiveUpdatePayload extends ArchivePayload {
+  statut_archive?: string
 }
 
 export const archivesService = {
@@ -28,7 +32,7 @@ export const archivesService = {
     http.get<ApiEnvelope<Paginated<Archive>>>('/archives', { query: params }),
   create: (payload: ArchivePayload) =>
     http.post<ApiEnvelope<Archive>>('/archives', payload),
-  update: (id: number | string, payload: Partial<ArchivePayload>) =>
+  update: (id: number | string, payload: Partial<ArchiveUpdatePayload>) =>
     http.put<ApiEnvelope<Archive>>(`/archives/${id}`, payload),
   remove: (id: number | string) => http.delete<ApiEnvelope<null>>(`/archives/${id}`),
 }

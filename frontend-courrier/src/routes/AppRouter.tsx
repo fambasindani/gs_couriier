@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AdminLayout } from '@/layouts/AdminLayout'
 import { ProtectedRoute } from './ProtectedRoute'
+import { GuardedRoute } from './GuardedRoute'
 import { LoginPage } from '@/pages/LoginPage'
 import { PlaceholderPage } from '@/pages/PlaceholderPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
@@ -111,43 +112,302 @@ export function AppRouter() {
 
         <Route element={<ProtectedRoute />}>
           <Route element={<AdminLayout />}>
-            <Route index element={<DashboardPage />} />
-            <Route path="/dashboard/statistiques" element={<DashboardStatistiquesPage />} />
-            <Route path="/dashboard/activite-recente" element={<DashboardActivitePage />} />
-            <Route path="/courriers" element={<CourriersListePage />} />
-            <Route path="/encodage" element={<PointEncodagePage />} />
-            <Route path="/courriers/en-retard" element={<CourriersRetardPage />} />
-            <Route path="/courriers/lies" element={<CourriersLiesPage />} />
-            <Route path="/courriers/recherche" element={<RechercheAvanceePage />} />
-            <Route path="/courriers/nouveau" element={<CourrierFormPage />} />
-            <Route path="/courriers/:id/modifier" element={<CourrierFormPage />} />
-            <Route path="/courriers/:id" element={<CourrierDetailPage />} />
-            <Route path="/traitement/affectations" element={<AffectationsPage />} />
-            <Route path="/traitement/annotations" element={<AnnotationsPage />} />
-            <Route path="/traitement/validations" element={<ValidationsPage />} />
-            <Route path="/traitement/circuit" element={<CircuitPage />} />
-            <Route path="/projets-lettres" element={<ProjetsLettresPage />} />
-            <Route path="/projets-lettres/:id" element={<ProjetLettreDetailPage />} />
-            <Route path="/archives" element={<ArchivesListePage />} />
-            <Route path="/archives/categories" element={<ArchiveCategoriesPage />} />
-            <Route path="/archives/emplacements" element={<ArchiveEmplacementsPage />} />
-            <Route path="/archives/ocr" element={<NumerisationOcrPage />} />
-            <Route path="/referentiels/types" element={<ReferentielsCrudPage config={typesConfig} />} />
-            <Route path="/referentiels/categories" element={<ReferentielsCrudPage config={categoriesConfig} />} />
-            <Route path="/referentiels/priorites" element={<ReferentielsCrudPage config={prioritesConfig} />} />
-            <Route path="/referentiels/statuts" element={<ReferentielsCrudPage config={statutsConfig} />} />
-            <Route path="/referentiels/expediteurs" element={<ReferentielsCrudPage config={expediteursConfig} />} />
-            <Route path="/referentiels/destinataires" element={<ReferentielsCrudPage config={destinatairesConfig} />} />
-            <Route path="/referentiels/lettres" element={<LettreModelesPage />} />
-            <Route path="/rapports" element={<RapportStatistiquesPage />} />
-            <Route path="/rapports/delais" element={<RapportDelaisPage />} />
-            <Route path="/rapports/services" element={<RapportServicesPage />} />
-            <Route path="/rapports/export" element={<RapportExportPage />} />
-            <Route path="/admin/utilisateurs" element={<UtilisateursPage />} />
-            <Route path="/admin/roles" element={<RolesPermissionsPage />} />
-            <Route path="/admin/structure" element={<StructurePage />} />
-            <Route path="/admin/audit" element={<JournalAuditPage />} />
-            <Route path="/admin/parametres" element={<ParametresPage />} />
+            <Route
+              index
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <DashboardPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/statistiques"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <DashboardStatistiquesPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/activite-recente"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <DashboardActivitePage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/courriers"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <CourriersListePage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/encodage"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <PointEncodagePage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/courriers/en-retard"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <CourriersRetardPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/courriers/lies"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <CourriersLiesPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/courriers/recherche"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <RechercheAvanceePage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/courriers/nouveau"
+              element={
+                <GuardedRoute permission="courriers.create">
+                  <CourrierFormPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/courriers/:id/modifier"
+              element={
+                <GuardedRoute permission="courriers.update">
+                  <CourrierFormPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/courriers/:id"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <CourrierDetailPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/traitement/affectations"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <AffectationsPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/traitement/annotations"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <AnnotationsPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/traitement/validations"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <ValidationsPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/traitement/circuit"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <CircuitPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/projets-lettres"
+              element={
+                <GuardedRoute permission="projets.view">
+                  <ProjetsLettresPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/projets-lettres/:id"
+              element={
+                <GuardedRoute permission="projets.view">
+                  <ProjetLettreDetailPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/archives"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <ArchivesListePage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/archives/categories"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <ArchiveCategoriesPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/archives/emplacements"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <ArchiveEmplacementsPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/archives/ocr"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <NumerisationOcrPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/referentiels/types"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <ReferentielsCrudPage config={typesConfig} />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/referentiels/categories"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <ReferentielsCrudPage config={categoriesConfig} />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/referentiels/priorites"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <ReferentielsCrudPage config={prioritesConfig} />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/referentiels/statuts"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <ReferentielsCrudPage config={statutsConfig} />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/referentiels/expediteurs"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <ReferentielsCrudPage config={expediteursConfig} />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/referentiels/destinataires"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <ReferentielsCrudPage config={destinatairesConfig} />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/referentiels/lettres"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <LettreModelesPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/rapports"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <RapportStatistiquesPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/rapports/delais"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <RapportDelaisPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/rapports/services"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <RapportServicesPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/rapports/export"
+              element={
+                <GuardedRoute permission="courriers.view">
+                  <RapportExportPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/admin/utilisateurs"
+              element={
+                <GuardedRoute permission="users.view">
+                  <UtilisateursPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/admin/roles"
+              element={
+                <GuardedRoute permission={['roles.view', 'permissions.view']}>
+                  <RolesPermissionsPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/admin/structure"
+              element={
+                <GuardedRoute permission="structure.view">
+                  <StructurePage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/admin/audit"
+              element={
+                <GuardedRoute permission="audit.view">
+                  <JournalAuditPage />
+                </GuardedRoute>
+              }
+            />
+            <Route
+              path="/admin/parametres"
+              element={
+                <GuardedRoute permission="parametres.view">
+                  <ParametresPage />
+                </GuardedRoute>
+              }
+            />
             <Route path="/profil" element={<ProfilPage />} />
             {placeholderRoutes.map(([path, title]) => (
               <Route key={path} path={path} element={<PlaceholderPage title={title} />} />

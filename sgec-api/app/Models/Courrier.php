@@ -14,6 +14,18 @@ class Courrier extends Model
 {
     use HasFactory;
 
+    /**
+     * Colonnes utiles pour les listes — exclut les gros champs texte (contenu, observation)
+     * allégés du payload (le détail complet reste accessible via show()).
+     */
+    public const LIST_SELECT = [
+        'id', 'numero', 'reference_externe', 'type_courrier_id', 'categorie_id',
+        'priorite_id', 'statut_id', 'expediteur_id', 'destinataire_id',
+        'courrier_parent_id', 'objet', 'date_courrier', 'date_reception',
+        'date_limite', 'date_cloture', 'confidentialite', 'nombre_pieces',
+        'nombre_pages', 'created_by', 'updated_by', 'created_at', 'updated_at',
+    ];
+
     protected $fillable = [
         'numero',
         'reference_externe',
@@ -275,6 +287,64 @@ class Courrier extends Model
                 $q->orWhere('service_id', $user->service_id);
             }
         })->exists();
+    }
+
+    /**
+     * Vrai si le courrier est affecté à l'unité de l'utilisateur
+     * (sa direction, son département, son service ou directement à lui).
+     * Sert à autoriser les actions du service destinataire (suppression, travail sur l'affectation).
+     */
+    public function affecteAUneUniteDe(User $user): bool
+    {
+        return $this->affectations()
+            ->where(function (Builder $q) use ($user) {
+                $q->where('user_id', $user->id);
+
+                if ($user->direction_id) {
+                    $q->orWhere('direction_id', $user->direction_id);
+                }
+                if ($user->departement_id) {
+                    $q->orWhere('departement_id', $user->departement_id);
+                }
+                if ($user->service_id) {
+                    $q->orWhere('service_id', $user->service_id);
+                }
+            })
+            ->exists();
+    }
+
+    /**
+     * Statuts « terminaux »/verrouillés qui empêchent la suppression du courrier
+     * (validé, clôturé, archivé, annulé, rejeté).
+     */
+    public function estSupprimable(): bool
+    {
+        return ! in_array($this->statut?->code, ['VALIDE', 'CLOTURE', 'ARCHIVE', 'ANNULE', 'REJETE'], true);
+    }
+
+    /**
+     * Sens relatif d'un courrier INTERNE vu par un utilisateur :
+     * 'ENTRANT' si affecté à son unité, 'SORTANT' s'il l'émet l'affecte, null sinon.
+     * Pour les courriers externes (ENTRANT/SORTANT), le sens reste celui de l'origine : null.
+     */
+    public function sensPourUtilisateur(User $user): ?string
+    {
+        if (! in_array($this->typeCourrier?->code, ['INT_ENTRANT', 'INT_SORTANT'], true)) {
+            return null;
+        }
+
+        $recepteur = $this->affecteAUneUniteDe($user);
+        $emetteur = (int) $this->created_by === (int) $user->id
+            || $this->affectations()->where('affecte_par', $user->id)->exists();
+
+        if ($recepteur && ! $emetteur) {
+            return 'ENTRANT';
+        }
+        if ($emetteur) {
+            return 'SORTANT';
+        }
+
+        return null;
     }
 
         /**

@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Field, Input } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Pagination } from '@/components/ui/Pagination'
 import { TableBodySkeleton } from '@/components/ui/Skeletons'
@@ -14,7 +15,7 @@ import { formatDate } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
 import type { AuditLog, Paginated } from '@/types'
 
-const PER_PAGE = 20
+const PER_PAGE = 15
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
 
 export function JournalAuditPage() {
@@ -248,26 +249,15 @@ export function JournalAuditPage() {
         )}
       </Modal>
 
-      <Modal
+      <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Supprimer le log"
-        size="sm"
+        tone="danger"
+        confirmLabel="Supprimer"
+        message={<p>Confirmez-vous la suppression de cette entrée du journal ?</p>}
+        onConfirm={handleDelete}
         onClose={() => setDeleteTarget(null)}
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              Annuler
-            </Button>
-            <Button variant="danger" onClick={handleDelete}>
-              Supprimer
-            </Button>
-          </>
-        }
-      >
-        <p className="text-[0.85rem] text-slate-600">
-          Confirmez-vous la suppression de cette entrée du journal ?
-        </p>
-      </Modal>
+      />
     </div>
   )
 }

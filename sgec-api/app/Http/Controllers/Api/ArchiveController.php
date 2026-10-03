@@ -222,10 +222,13 @@ class ArchiveController extends Controller
             }
 
             $validated = $request->validate([
-                'archive_category_id' => 'nullable|exists:archive_categories,id',
-                'archive_emplacement_id' => 'nullable|exists:archive_emplacements,id',
+                'archive_category_id' => 'required|exists:archive_categories,id',
+                'archive_emplacement_id' => 'required|exists:archive_emplacements,id',
                 'titre_dossier' => 'nullable|string|max:255',
+                'producteur_service' => 'nullable|string|max:150',
+                'date_periode' => 'nullable|string|max:100',
                 'duree_conservation_ans' => 'nullable|integer|min:1|max:100',
+                'date_versement' => 'nullable|date',
                 'observation' => 'nullable|string',
             ]);
 
@@ -233,10 +236,10 @@ class ArchiveController extends Controller
             $validated['cote_archive'] = Archive::genererCote();
             $validated['archive_par'] = auth()->id();
             $validated['titre_dossier'] = $validated['titre_dossier'] ?? $courrier->objet;
-            $validated['producteur_service'] = $courrier->createur?->name;
-            $validated['date_periode'] = $courrier->date_courrier?->format('Y-m-d');
+            $validated['producteur_service'] = $validated['producteur_service'] ?? $courrier->createur?->name;
+            $validated['date_periode'] = $validated['date_periode'] ?? $courrier->date_courrier?->format('Y-m-d');
+            $validated['date_versement'] = $validated['date_versement'] ?? now();
             $validated['statut_archive'] = 'ACTIF';
-            $validated['date_versement'] = now();
 
             if (! empty($validated['duree_conservation_ans'])) {
                 $validated['date_fin_conservation'] = now()

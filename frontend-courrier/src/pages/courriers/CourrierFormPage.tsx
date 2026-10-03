@@ -186,14 +186,22 @@ export function CourrierFormPage() {
 
   const fieldError = (key: keyof FormState) => fieldErrors[key]?.[0]
 
-  // En édition : ne proposer que le statut actuel + les transitions autorisées
+  // En création : un courrier démarre systématiquement en « Enregistré » (workflow standard).
+  // En édition : ne proposer que le statut actuel + les transitions autorisées.
   const statutsDisponibles = referentiels.statuts.filter((item) => {
-    if (!isEdit || !currentStatutCode) return true
+    if (!isEdit) return item.code === 'ENREGISTRE'
+    if (!currentStatutCode) return true
     return (
       item.code === currentStatutCode ||
       transitionsAutorisees(currentStatutCode).includes(item.code ?? '')
     )
   })
+
+  useEffect(() => {
+    if (isEdit) return
+    const enregistre = referentiels.statuts.find((s) => s.code === 'ENREGISTRE')
+    if (enregistre) setForm((prev) => ({ ...prev, statut_id: String(enregistre.id) }))
+  }, [isEdit, referentiels.statuts])
 
   return (
     <div>

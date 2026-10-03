@@ -118,9 +118,9 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
   PRIMARY KEY (`id`),
   KEY `audit_logs_user_id_created_at_index` (`user_id`,`created_at`),
   CONSTRAINT `audit_logs_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=167 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=196 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Listage des données de la table gs_courrier.audit_logs : ~43 rows (environ)
+-- Listage des données de la table gs_courrier.audit_logs : ~148 rows (environ)
 INSERT INTO `audit_logs` (`id`, `user_id`, `event`, `url`, `ip_address`, `user_agent`, `created_at`, `updated_at`) VALUES
 	(1, 1, 'POST api/archive-categories', 'http://127.0.0.1:8000/api/archive-categories', '127.0.0.1', 'PostmanRuntime/7.51.1', '2026-09-30 19:42:40', '2026-09-30 19:42:40'),
 	(2, 1, 'POST api/archive-emplacements', 'http://127.0.0.1:8000/api/archive-emplacements', '127.0.0.1', 'PostmanRuntime/7.51.1', '2026-09-30 19:44:15', '2026-09-30 19:44:15'),
@@ -271,7 +271,31 @@ INSERT INTO `audit_logs` (`id`, `user_id`, `event`, `url`, `ip_address`, `user_a
 	(163, 1, 'POST api/courriers/5/lettre', 'http://127.0.0.1:8000/api/courriers/5/lettre', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:157.0) Gecko/20100101 Firefox/157.0', '2026-10-01 17:22:55', '2026-10-01 17:22:55'),
 	(164, 1, 'POST api/projets-lettres/4/archiver', 'http://127.0.0.1:8000/api/projets-lettres/4/archiver', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:157.0) Gecko/20100101 Firefox/157.0', '2026-10-01 17:24:46', '2026-10-01 17:24:46'),
 	(165, 1, 'courrier.archive', 'Courrier COUR-2026-9007 archivé sous la cote ARCH-2026-0009', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:157.0) Gecko/20100101 Firefox/157.0', '2026-10-01 17:25:50', '2026-10-01 17:25:50'),
-	(166, 1, 'POST api/courriers/16/archiver', 'http://127.0.0.1:8000/api/courriers/16/archiver', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:157.0) Gecko/20100101 Firefox/157.0', '2026-10-01 17:25:50', '2026-10-01 17:25:50');
+	(166, 1, 'POST api/courriers/16/archiver', 'http://127.0.0.1:8000/api/courriers/16/archiver', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:157.0) Gecko/20100101 Firefox/157.0', '2026-10-01 17:25:50', '2026-10-01 17:25:50'),
+	(172, 1, 'courrier.created', 'Courrier EE-2026-0001 créé par Pierre Papy', '127.0.0.1', 'Symfony', '2026-10-02 14:58:56', '2026-10-02 14:58:56'),
+	(173, 1, 'POST api/courriers', 'http://localhost/api/courriers', '127.0.0.1', 'Symfony', '2026-10-02 14:59:02', '2026-10-02 14:59:02'),
+	(174, 1, 'courrier.created', 'Courrier ES-2026-0001 créé par Pierre Papy', '127.0.0.1', 'Symfony', '2026-10-02 14:59:03', '2026-10-02 14:59:03'),
+	(175, 1, 'POST api/courriers', 'http://localhost/api/courriers', '127.0.0.1', 'Symfony', '2026-10-02 14:59:03', '2026-10-02 14:59:03'),
+	(176, 1, 'courrier.created', 'Courrier DAF-EE-2026-0001 créé par Pierre Papy', '127.0.0.1', 'Symfony', '2026-10-02 14:59:03', '2026-10-02 14:59:03'),
+	(177, 1, 'POST api/courriers', 'http://localhost/api/courriers', '127.0.0.1', 'Symfony', '2026-10-02 14:59:03', '2026-10-02 14:59:03'),
+	(178, 1, 'POST api/logout', 'http://127.0.0.1:8000/api/logout', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36', '2026-10-02 15:29:41', '2026-10-02 15:29:41'),
+	(179, 1, 'POST api/logout', 'http://127.0.0.1:8000/api/logout', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:157.0) Gecko/20100101 Firefox/157.0', '2026-10-02 15:40:21', '2026-10-02 15:40:21'),
+	(180, 1, 'POST api/courriers/20/archiver', 'http://127.0.0.1:8000/api/courriers/20/archiver', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36', '2026-10-02 15:42:17', '2026-10-02 15:42:17'),
+	(181, 1, 'POST api/courriers/20/archiver', 'http://127.0.0.1:8000/api/courriers/20/archiver', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36', '2026-10-02 15:42:21', '2026-10-02 15:42:21'),
+	(182, 1, 'POST api/courriers/20/archiver', 'http://127.0.0.1:8000/api/courriers/20/archiver', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36', '2026-10-02 15:42:25', '2026-10-02 15:42:25'),
+	(183, 1, 'POST api/courriers/20/archiver', 'http://127.0.0.1:8000/api/courriers/20/archiver', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36', '2026-10-02 15:42:28', '2026-10-02 15:42:28'),
+	(184, 1, 'POST api/logout', 'http://127.0.0.1:8000/api/logout', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:157.0) Gecko/20100101 Firefox/157.0', '2026-10-02 16:18:13', '2026-10-02 16:18:13'),
+	(185, 1, 'POST api/logout', 'http://127.0.0.1:8000/api/logout', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36', '2026-10-02 16:18:24', '2026-10-02 16:18:24'),
+	(186, 1, 'POST api/courriers/19/archiver', 'http://127.0.0.1:8000/api/courriers/19/archiver', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36', '2026-10-02 16:54:27', '2026-10-02 16:54:27'),
+	(187, 1, 'POST api/courriers/19/archiver', 'http://127.0.0.1:8000/api/courriers/19/archiver', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36', '2026-10-02 16:54:35', '2026-10-02 16:54:35'),
+	(188, 1, 'POST api/courriers/19/archiver', 'http://127.0.0.1:8000/api/courriers/19/archiver', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36', '2026-10-02 16:54:41', '2026-10-02 16:54:41'),
+	(189, 1, 'POST api/courriers/19/archiver', 'http://127.0.0.1:8000/api/courriers/19/archiver', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36', '2026-10-02 16:54:46', '2026-10-02 16:54:46'),
+	(190, 1, 'POST api/courriers/19/archiver', 'http://127.0.0.1:8000/api/courriers/19/archiver', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36', '2026-10-02 16:54:56', '2026-10-02 16:54:56'),
+	(191, 1, 'POST api/courriers/19/archiver', 'http://127.0.0.1:8000/api/courriers/19/archiver', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36', '2026-10-02 16:55:05', '2026-10-02 16:55:05'),
+	(192, 1, 'POST api/courriers/19/archiver', 'http://127.0.0.1:8000/api/courriers/19/archiver', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36', '2026-10-02 17:08:02', '2026-10-02 17:08:02'),
+	(193, 1, 'POST api/courriers/19/archiver', 'http://127.0.0.1:8000/api/courriers/19/archiver', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36', '2026-10-02 17:08:07', '2026-10-02 17:08:07'),
+	(194, 1, 'POST api/courriers/19/archiver', 'http://127.0.0.1:8000/api/courriers/19/archiver', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36', '2026-10-02 17:08:14', '2026-10-02 17:08:14'),
+	(195, 1, 'POST api/logout', 'http://127.0.0.1:8000/api/logout', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36', '2026-10-02 18:10:54', '2026-10-02 18:10:54');
 
 -- Listage de la structure de table gs_courrier. categorie_courriers
 CREATE TABLE IF NOT EXISTS `categorie_courriers` (
@@ -342,20 +366,23 @@ CREATE TABLE IF NOT EXISTS `courriers` (
   CONSTRAINT `courriers_statut_id_foreign` FOREIGN KEY (`statut_id`) REFERENCES `statut_courriers` (`id`),
   CONSTRAINT `courriers_type_courrier_id_foreign` FOREIGN KEY (`type_courrier_id`) REFERENCES `type_courriers` (`id`),
   CONSTRAINT `courriers_updated_by_foreign` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Listage des données de la table gs_courrier.courriers : ~4 rows (environ)
+-- Listage des données de la table gs_courrier.courriers : ~11 rows (environ)
 INSERT INTO `courriers` (`id`, `numero`, `reference_externe`, `type_courrier_id`, `categorie_id`, `priorite_id`, `statut_id`, `expediteur_id`, `destinataire_id`, `courrier_parent_id`, `objet`, `contenu`, `date_courrier`, `date_reception`, `date_limite`, `date_cloture`, `confidentialite`, `nombre_pieces`, `nombre_pages`, `observation`, `created_by`, `updated_by`, `created_at`, `updated_at`) VALUES
 	(1, 'COUR-2026-0001', 'MIN/BUD/2026/045', 1, 2, 3, 5, 1, 1, NULL, 'Transmission du rapport trimestriel d\'exécution budgétaire', 'Veuillez trouver ci-joint le rapport trimestriel d\'exécution du budget pour le T3 2026.', '2026-09-28', '2026-09-28 23:41:00', '2026-10-05 23:41:00', NULL, 'INTERNE', 3, 45, NULL, 1, 1, '2026-09-30 19:41:20', '2026-10-01 15:41:59'),
 	(2, 'COUR-2026-0002', 'DGRAD/2026/078', 1, 4, 2, 3, 2, 2, NULL, 'Note de service relative à la numérisation des dossiers', 'Dans le cadre de la modernisation, veuillez procéder à la numérisation des dossiers physiques.', '2026-09-27', '2026-09-27 21:41:20', '2026-10-10 21:41:20', NULL, 'CONFIDENTIEL', 1, 12, NULL, 1, NULL, '2026-09-30 19:41:20', '2026-10-01 07:49:12'),
 	(3, 'COUR-2026-0003', 'FONDEG/2026/012', 1, 5, 1, 3, 3, 3, NULL, 'Demande d\'approvisionnement du stock central', 'Nous sollicitons un réapprovisionnement en fournitures de bureau.', '2026-09-26', '2026-09-26 21:41:20', '2026-10-15 21:41:20', NULL, 'PUBLIC', 3, 8, NULL, 1, NULL, '2026-09-30 19:41:20', '2026-09-30 21:15:26'),
 	(4, 'COUR-2026-0004', NULL, 2, 1, 2, 2, 1, 1, NULL, 'Réponse au courrier COUR-2026-0001', NULL, NULL, '2026-09-30 22:07:29', NULL, NULL, 'INTERNE', 0, 0, NULL, 1, NULL, '2026-09-30 20:07:29', '2026-10-01 08:23:43'),
-	(5, 'COUR-2026-0005', 'CONC/20026', 3, 2, 2, 2, 2, 1, NULL, 'DEMANDE DE FINANCEMENT D \'UN LOGICIEL', NULL, '2026-09-29', '2026-10-01 11:46:00', '2026-10-31 16:46:00', '2026-10-30 16:46:00', 'INTERNE', 1, 1, NULL, 4, NULL, '2026-10-01 07:47:09', '2026-10-01 08:51:29'),
+	(5, 'COUR-2026-0005', 'CONC/20026', 5, 2, 2, 2, 2, 1, NULL, 'DEMANDE DE FINANCEMENT D \'UN LOGICIEL', NULL, '2026-09-29', '2026-10-01 11:46:00', '2026-10-31 16:46:00', '2026-10-30 16:46:00', 'INTERNE', 1, 1, NULL, 4, NULL, '2026-10-01 07:47:09', '2026-10-02 14:51:00'),
 	(6, 'COUR-2026-9001', 'MIN/BUD/2026/9001', 1, 2, 3, 8, 1, 1, NULL, 'Transmission du projet de budget 2027', 'Veuillez trouver ci-joint le projet de budget pour l’exercice 2027.', '2026-09-11', '2026-09-11 09:54:41', '2026-10-06 09:54:41', '2026-09-20 18:54:41', 'CONFIDENTIEL', 0, 3, NULL, 1, NULL, '2026-10-01 07:54:41', '2026-10-01 07:54:41'),
 	(7, 'COUR-2026-9002', 'SGEC/SORT/2026/9002', 2, 3, 2, 8, 2, 4, NULL, 'Réponse à la demande de documentation juridique', 'En réponse à votre demande, veuillez trouver les pièces sollicitées.', '2026-09-11', '2026-09-11 09:54:41', '2026-10-06 09:54:41', '2026-09-20 18:54:41', 'INTERNE', 0, 3, NULL, 1, NULL, '2026-10-01 07:54:41', '2026-10-01 07:54:41'),
 	(11, 'COUR-2026-9003', 'MIN/BUD/2027/001', 1, 2, 3, 8, 1, 1, 6, 'Transmission du projet de budget 2027', NULL, '2026-09-28', '2026-10-01 12:01:00', '2026-10-16 16:02:00', '2026-10-29 12:04:00', 'CONFIDENTIEL', 1, 0, NULL, 1, NULL, '2026-10-01 08:05:52', '2026-10-01 08:41:35'),
 	(12, 'COUR-2026-9004', 'SGEC/SORT/2027/002', 2, 3, 2, 2, 2, 4, NULL, 'Réponse à la demande de documentation', NULL, '2026-09-28', '2026-10-01 15:10:00', '2026-10-15 15:11:00', '2026-10-30 15:11:00', 'INTERNE', 1, 0, NULL, 1, 1, '2026-10-01 08:10:49', '2026-10-01 08:11:49'),
-	(16, 'COUR-2026-9007', 'PL-2026-0001', 2, NULL, 2, 8, NULL, NULL, NULL, 'FINANCEMENT DU LOGICIEL', 'Courrier sortant généré depuis le projet de lettre PL-2026-0001', NULL, '2026-10-01 19:02:26', NULL, NULL, 'INTERNE', 0, 0, NULL, 1, NULL, '2026-10-01 17:02:26', '2026-10-01 17:25:50');
+	(16, 'COUR-2026-9007', 'PL-2026-0001', 2, NULL, 2, 8, NULL, NULL, NULL, 'FINANCEMENT DU LOGICIEL', 'Courrier sortant généré depuis le projet de lettre PL-2026-0001', NULL, '2026-10-01 19:02:26', NULL, NULL, 'INTERNE', 0, 0, NULL, 1, NULL, '2026-10-01 17:02:26', '2026-10-01 17:25:50'),
+	(18, 'EE-2026-0001', NULL, 1, NULL, 2, 1, 1, 1, NULL, 'Demande de documentation administrative', NULL, NULL, '2026-10-02 16:58:43', NULL, NULL, 'INTERNE', 0, 0, NULL, 1, NULL, '2026-10-02 14:58:56', '2026-10-02 14:58:56'),
+	(19, 'ES-2026-0001', NULL, 2, NULL, 2, 1, 1, 4, NULL, 'Réponse à la demande de documentation', NULL, NULL, '2026-10-02 16:59:03', NULL, NULL, 'INTERNE', 0, 0, NULL, 1, NULL, '2026-10-02 14:59:03', '2026-10-02 14:59:03'),
+	(20, 'DAF-EE-2026-0001', NULL, 5, NULL, 2, 1, NULL, 2, NULL, 'Note interne - projet de réforme', NULL, NULL, '2026-10-02 16:59:03', NULL, NULL, 'INTERNE', 0, 0, NULL, 1, NULL, '2026-10-02 14:59:03', '2026-10-02 14:59:03');
 
 -- Listage de la structure de table gs_courrier. courrier_affectations
 CREATE TABLE IF NOT EXISTS `courrier_affectations` (
@@ -370,6 +397,7 @@ CREATE TABLE IF NOT EXISTS `courrier_affectations` (
   `date_limite` datetime DEFAULT NULL,
   `date_prise_en_charge` datetime DEFAULT NULL,
   `date_traitement` datetime DEFAULT NULL,
+  `date_accuse_reception` timestamp NULL DEFAULT NULL,
   `statut` enum('AFFECTE','PRIS_EN_CHARGE','EN_TRAITEMENT','TRAITE','REJETE') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'AFFECTE',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -382,6 +410,7 @@ CREATE TABLE IF NOT EXISTS `courrier_affectations` (
   KEY `courrier_affectations_affecte_par_foreign` (`affecte_par`),
   KEY `courrier_affectations_statut_index` (`statut`),
   KEY `courrier_affectations_date_limite_index` (`date_limite`),
+  KEY `courrier_affectations_date_accuse_reception_index` (`date_accuse_reception`),
   CONSTRAINT `courrier_affectations_affecte_par_foreign` FOREIGN KEY (`affecte_par`) REFERENCES `users` (`id`),
   CONSTRAINT `courrier_affectations_courrier_id_foreign` FOREIGN KEY (`courrier_id`) REFERENCES `courriers` (`id`) ON DELETE CASCADE,
   CONSTRAINT `courrier_affectations_departement_id_foreign` FOREIGN KEY (`departement_id`) REFERENCES `departements` (`id`) ON DELETE SET NULL,
@@ -390,15 +419,15 @@ CREATE TABLE IF NOT EXISTS `courrier_affectations` (
   CONSTRAINT `courrier_affectations_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Listage des données de la table gs_courrier.courrier_affectations : ~3 rows (environ)
-INSERT INTO `courrier_affectations` (`id`, `courrier_id`, `direction_id`, `departement_id`, `service_id`, `user_id`, `affecte_par`, `date_affectation`, `date_limite`, `date_prise_en_charge`, `date_traitement`, `statut`, `created_at`, `updated_at`) VALUES
-	(1, 1, 1, 2, NULL, 2, 1, '2026-09-28 21:41:20', '2026-10-05 21:41:20', '2026-09-28 23:41:20', NULL, 'PRIS_EN_CHARGE', '2026-09-30 19:41:20', '2026-09-30 19:41:20'),
-	(2, 2, 1, 2, 1, 3, 2, '2026-09-27 21:41:20', '2026-10-07 21:41:00', '2026-09-27 22:41:20', NULL, 'EN_TRAITEMENT', '2026-09-30 19:41:20', '2026-10-01 07:49:12'),
-	(3, 3, 2, 4, NULL, NULL, 1, '2026-09-29 21:41:20', '2026-10-15 21:41:20', '2026-09-30 23:15:26', NULL, 'PRIS_EN_CHARGE', '2026-09-30 19:41:20', '2026-09-30 21:15:26'),
-	(4, 6, 2, 4, 7, 3, 1, '2026-09-12 18:54:41', '2026-10-05 09:54:41', '2026-09-13 18:54:41', '2026-09-19 18:54:41', 'TRAITE', '2026-10-01 07:54:41', '2026-10-01 07:54:41'),
-	(5, 7, 1, 2, 3, 3, 1, '2026-09-12 18:54:41', '2026-10-05 09:54:41', '2026-09-13 18:54:41', '2026-09-19 18:54:41', 'TRAITE', '2026-10-01 07:54:41', '2026-10-01 07:54:41'),
-	(6, 11, 2, 4, 6, 4, 1, '2026-10-01 10:21:24', '2026-10-24 16:21:00', '2026-10-01 10:28:22', NULL, 'PRIS_EN_CHARGE', '2026-10-01 08:21:24', '2026-10-01 08:28:22'),
-	(7, 4, 3, 5, 8, 2, 1, '2026-10-01 10:23:43', '2026-10-30 12:23:00', NULL, NULL, 'AFFECTE', '2026-10-01 08:23:43', '2026-10-01 08:23:43');
+-- Listage des données de la table gs_courrier.courrier_affectations : ~7 rows (environ)
+INSERT INTO `courrier_affectations` (`id`, `courrier_id`, `direction_id`, `departement_id`, `service_id`, `user_id`, `affecte_par`, `date_affectation`, `date_limite`, `date_prise_en_charge`, `date_traitement`, `date_accuse_reception`, `statut`, `created_at`, `updated_at`) VALUES
+	(1, 1, 1, 2, NULL, 2, 1, '2026-09-28 21:41:20', '2026-10-05 21:41:20', '2026-09-28 23:41:20', NULL, NULL, 'PRIS_EN_CHARGE', '2026-09-30 19:41:20', '2026-09-30 19:41:20'),
+	(2, 2, 1, 2, 1, 3, 2, '2026-09-27 21:41:20', '2026-10-07 21:41:00', '2026-09-27 22:41:20', NULL, NULL, 'EN_TRAITEMENT', '2026-09-30 19:41:20', '2026-10-01 07:49:12'),
+	(3, 3, 2, 4, NULL, NULL, 1, '2026-09-29 21:41:20', '2026-10-15 21:41:20', '2026-09-30 23:15:26', NULL, NULL, 'PRIS_EN_CHARGE', '2026-09-30 19:41:20', '2026-09-30 21:15:26'),
+	(4, 6, 2, 4, 7, 3, 1, '2026-09-12 18:54:41', '2026-10-05 09:54:41', '2026-09-13 18:54:41', '2026-09-19 18:54:41', NULL, 'TRAITE', '2026-10-01 07:54:41', '2026-10-01 07:54:41'),
+	(5, 7, 1, 2, 3, 3, 1, '2026-09-12 18:54:41', '2026-10-05 09:54:41', '2026-09-13 18:54:41', '2026-09-19 18:54:41', NULL, 'TRAITE', '2026-10-01 07:54:41', '2026-10-01 07:54:41'),
+	(6, 11, 2, 4, 6, 4, 1, '2026-10-01 10:21:24', '2026-10-24 16:21:00', '2026-10-01 10:28:22', NULL, NULL, 'PRIS_EN_CHARGE', '2026-10-01 08:21:24', '2026-10-01 08:28:22'),
+	(7, 4, 3, 5, 8, 2, 1, '2026-10-01 10:23:43', '2026-10-30 12:23:00', NULL, NULL, NULL, 'AFFECTE', '2026-10-01 08:23:43', '2026-10-01 08:23:43');
 
 -- Listage de la structure de table gs_courrier. courrier_annotations
 CREATE TABLE IF NOT EXISTS `courrier_annotations` (
@@ -417,7 +446,7 @@ CREATE TABLE IF NOT EXISTS `courrier_annotations` (
   CONSTRAINT `courrier_annotations_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Listage des données de la table gs_courrier.courrier_annotations : ~3 rows (environ)
+-- Listage des données de la table gs_courrier.courrier_annotations : ~5 rows (environ)
 INSERT INTO `courrier_annotations` (`id`, `courrier_id`, `user_id`, `annotation`, `date_limite`, `etat`, `created_at`, `updated_at`) VALUES
 	(1, 1, 1, 'Merci de préparer une note de synthèse pour le DG avant vendredi.', '2026-10-03 21:41:20', 'EN_ATTENTE', '2026-09-30 19:41:20', '2026-09-30 19:41:20'),
 	(2, 1, 2, 'Analyse préliminaire effectuée, en attente de validation budgétaire.', '2026-10-05 21:41:20', 'EN_COURS', '2026-09-30 19:41:20', '2026-09-30 19:41:20'),
@@ -446,9 +475,9 @@ CREATE TABLE IF NOT EXISTS `courrier_historiques` (
   KEY `courrier_historiques_created_at_index` (`created_at`),
   CONSTRAINT `courrier_historiques_courrier_id_foreign` FOREIGN KEY (`courrier_id`) REFERENCES `courriers` (`id`) ON DELETE CASCADE,
   CONSTRAINT `courrier_historiques_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Listage des données de la table gs_courrier.courrier_historiques : ~3 rows (environ)
+-- Listage des données de la table gs_courrier.courrier_historiques : ~33 rows (environ)
 INSERT INTO `courrier_historiques` (`id`, `courrier_id`, `user_id`, `action`, `etape`, `description`, `ancienne_valeur`, `nouvelle_valeur`, `adresse_ip`, `created_at`, `updated_at`) VALUES
 	(1, 1, 1, 'courrier.archive', 'Archivage', 'Courrier COUR-2026-0001 archivé sous la cote ARCH-2026-0001', NULL, '{"cote": "ARCH-2026-0001", "archive_id": 1}', '127.0.0.1', '2026-09-30 19:45:17', '2026-09-30 19:45:17'),
 	(2, 4, 1, 'courrier.cree', 'Enregistrement', 'Courrier COUR-2026-0004 créé par Pierre Papy', NULL, '{"objet": "Réponse au courrier COUR-2026-0001", "numero": "COUR-2026-0004"}', '127.0.0.1', '2026-09-30 20:07:29', '2026-09-30 20:07:29'),
@@ -484,7 +513,10 @@ INSERT INTO `courrier_historiques` (`id`, `courrier_id`, `user_id`, `action`, `e
 	(35, 11, 4, 'courrier.annote', 'Annotation', 'Annotation ajoutée sur COUR-2026-9003 par SALAMA NGOY', NULL, '{"annotation_id": 6}', '127.0.0.1', '2026-10-01 08:30:39', '2026-10-01 08:30:39'),
 	(36, 11, 1, 'courrier.valide', 'Validation', 'Courrier COUR-2026-9003 VALIDE par Pierre Papy', NULL, '{"decision": "VALIDE", "validation_id": 6}', '127.0.0.1', '2026-10-01 08:36:17', '2026-10-01 08:36:17'),
 	(37, 11, 4, 'courrier.archive', 'Archivage', 'Courrier archivé sous la cote ARCH-2026-0008 par SALAMA NGOY', NULL, '{"cote": "ARCH-2026-0008", "archive_id": 8}', '127.0.0.1', '2026-10-01 08:37:21', '2026-10-01 08:37:21'),
-	(39, 16, 1, 'courrier.archive', 'Archivage', 'Courrier archivé sous la cote ARCH-2026-0009 par Pierre Papy', NULL, '{"cote": "ARCH-2026-0009", "archive_id": 9}', '127.0.0.1', '2026-10-01 17:25:50', '2026-10-01 17:25:50');
+	(39, 16, 1, 'courrier.archive', 'Archivage', 'Courrier archivé sous la cote ARCH-2026-0009 par Pierre Papy', NULL, '{"cote": "ARCH-2026-0009", "archive_id": 9}', '127.0.0.1', '2026-10-01 17:25:50', '2026-10-01 17:25:50'),
+	(42, 18, 1, 'courrier.cree', 'Enregistrement', 'Courrier EE-2026-0001 créé par Pierre Papy', NULL, '{"objet": "Demande de documentation administrative", "numero": "EE-2026-0001"}', '127.0.0.1', '2026-10-02 14:58:56', '2026-10-02 14:58:56'),
+	(43, 19, 1, 'courrier.cree', 'Enregistrement', 'Courrier ES-2026-0001 créé par Pierre Papy', NULL, '{"objet": "Réponse à la demande de documentation", "numero": "ES-2026-0001"}', '127.0.0.1', '2026-10-02 14:59:03', '2026-10-02 14:59:03'),
+	(44, 20, 1, 'courrier.cree', 'Enregistrement', 'Courrier DAF-EE-2026-0001 créé par Pierre Papy', NULL, '{"objet": "Note interne - projet de réforme", "numero": "DAF-EE-2026-0001"}', '127.0.0.1', '2026-10-02 14:59:03', '2026-10-02 14:59:03');
 
 -- Listage de la structure de table gs_courrier. courrier_pieces
 CREATE TABLE IF NOT EXISTS `courrier_pieces` (
@@ -510,7 +542,7 @@ CREATE TABLE IF NOT EXISTS `courrier_pieces` (
   CONSTRAINT `courrier_pieces_uploaded_by_foreign` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Listage des données de la table gs_courrier.courrier_pieces : ~1 rows (environ)
+-- Listage des données de la table gs_courrier.courrier_pieces : ~5 rows (environ)
 INSERT INTO `courrier_pieces` (`id`, `courrier_id`, `nom_original`, `nom_fichier`, `chemin`, `extension`, `mime_type`, `taille`, `texte_ocr`, `date_ocr`, `est_principal`, `uploaded_by`, `created_at`, `updated_at`) VALUES
 	(1, 3, 'aaa.pdf', 'courrier_3_1790809728.pdf', 'courriers/3/courrier_3_1790809728.pdf', 'pdf', 'application/pdf', 174728, NULL, NULL, 0, 1, '2026-09-30 21:08:49', '2026-09-30 21:08:49'),
 	(2, 11, 'PV_inventaire_INV-202609-0003.pdf', 'courrier_11_1790849252.pdf', 'courriers/11/courrier_11_1790849252.pdf', 'pdf', 'application/pdf', 10520, NULL, NULL, 0, 1, '2026-10-01 08:07:33', '2026-10-01 08:07:33'),
@@ -534,7 +566,7 @@ CREATE TABLE IF NOT EXISTS `courrier_validations` (
   CONSTRAINT `courrier_validations_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Listage des données de la table gs_courrier.courrier_validations : ~2 rows (environ)
+-- Listage des données de la table gs_courrier.courrier_validations : ~5 rows (environ)
 INSERT INTO `courrier_validations` (`id`, `courrier_id`, `user_id`, `decision`, `commentaire`, `date_validation`, `created_at`, `updated_at`) VALUES
 	(1, 1, 2, 'VISE', 'Vu et transmis au DG pour validation finale.', '2026-09-29 21:41:20', '2026-09-30 19:41:20', '2026-09-30 19:41:20'),
 	(2, 2, 1, 'VALIDE', 'Validé pour mise en œuvre immédiate.', '2026-09-30 09:41:20', '2026-09-30 19:41:20', '2026-09-30 19:41:20'),
@@ -657,7 +689,7 @@ CREATE TABLE IF NOT EXISTS `historique_projets_lettres` (
   CONSTRAINT `historique_projets_lettres_utilisateur_id_foreign` FOREIGN KEY (`utilisateur_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Listage des données de la table gs_courrier.historique_projets_lettres : ~7 rows (environ)
+-- Listage des données de la table gs_courrier.historique_projets_lettres : ~6 rows (environ)
 INSERT INTO `historique_projets_lettres` (`id`, `projet_lettre_id`, `utilisateur_id`, `action`, `ancien_statut`, `nouveau_statut`, `commentaire`, `date_action`, `created_at`, `updated_at`) VALUES
 	(26, 4, 1, 'creation', 'BROUILLON', 'BROUILLON', 'Création du projet de lettre', '2026-10-01 16:58:29', '2026-10-01 16:58:29', '2026-10-01 16:58:29'),
 	(27, 4, 1, 'import_version', 'BROUILLON', 'EN_REDACTION', 'Version v1 importée', '2026-10-01 16:59:06', '2026-10-01 16:59:06', '2026-10-01 16:59:06'),
@@ -691,11 +723,11 @@ CREATE TABLE IF NOT EXISTS `lettre_modeles` (
 INSERT INTO `lettre_modeles` (`id`, `nom`, `objet`, `corps`, `type_courrier_id`, `actif`, `created_by`, `created_at`, `updated_at`) VALUES
 	(1, 'Accusé de réception', 'Accusé de réception — {{numero}}', 'Kinshasa, le {{date_du_jour}}\n\nObjet : Accusé de réception — {{numero}}\n\nÀ l\'attention de {{expediteur}},\n\nNous accusons réception de votre correspondance référencée « {{reference_externe}} » du {{date_courrier}}, ayant pour objet : {{objet}}.\n\nVotre courrier a été enregistré sous le numéro {{numero}} (catégorie : {{categorie}}, priorité : {{priorite}}) et transmis au service compétent pour traitement.\n\nVeuillez agréer, {{expediteur}}, l\'expression de nos salutations distinguées.\n\nLe Secrétariat Général\nSGEC', 1, 1, NULL, '2026-10-01 09:03:16', '2026-10-01 09:03:16'),
 	(2, 'Demande de complément', 'Demande de complément — {{objet}}', 'Kinshasa, le {{date_du_jour}}\n\nObjet : Demande de complément — {{objet}}\n\nÀ l\'attention de {{expediteur}},\n\nDans le cadre du traitement du dossier « {{objet}} » (référence {{numero}}), nous vous prions de bien vouloir nous transmettre les pièces complémentaires suivantes :\n- ....................................................\n- ....................................................\n\nDate limite de réponse suggérée : {{date_limite}}.\n\nNous vous remercions par avance de votre collaboration.\n\nSGEC', NULL, 1, NULL, '2026-10-01 09:03:16', '2026-10-01 09:03:16'),
-	(3, 'Note de transmission', 'Note de transmission — {{objet}}', 'Kinshasa, le {{date_du_jour}}\n\nNote de transmission\n\nRéférence : {{numero}}\nObjet : {{objet}}\nÀ : {{destinataire}}\n\nPour traitement et suivi, veuillez trouver ci-joint le courrier référencé « {{reference_externe}} » reçu le {{date_reception}}.\n\nLe délai de traitement souhaité est fixé au {{date_limite}}.\n\nLe Secrétariat Général\nSGEC', 3, 1, NULL, '2026-10-01 09:36:43', '2026-10-01 09:36:43'),
+	(3, 'Note de transmission', 'Note de transmission — {{objet}}', 'Kinshasa, le {{date_du_jour}}\n\nNote de transmission\n\nRéférence : {{numero}}\nObjet : {{objet}}\nÀ : {{destinataire}}\n\nPour traitement et suivi, veuillez trouver ci-joint le courrier référencé « {{reference_externe}} » reçu le {{date_reception}}.\n\nLe délai de traitement souhaité est fixé au {{date_limite}}.\n\nLe Secrétariat Général\nSGEC', NULL, 1, NULL, '2026-10-01 09:36:43', '2026-10-01 09:36:43'),
 	(4, 'Demande d\'information', 'Demande d\'information — {{numero}}', 'Kinshasa, le {{date_du_jour}}\n\nObjet : Demande d\'information\n\nÀ l\'attention de {{destinataire}},\n\nNous vous prions de bien vouloir nous communiquer les informations suivantes concernant :\n{{objet}}\n\n1. ....................................................\n2. ....................................................\n3. ....................................................\n\nNous vous saurions gré de bien vouloir nous répondre au plus tard le {{date_limite}}.\n\nVeuillez agréer, {{destinataire}}, l\'expression de nos salutations distinguées.\n\nSGEC', 2, 1, NULL, '2026-10-01 09:36:43', '2026-10-01 09:36:43'),
 	(5, 'Réponse à une demande', 'Réponse — {{objet}}', 'Kinshasa, le {{date_du_jour}}\n\nObjet : Réponse à votre correspondance du {{date_courrier}}\nVotre référence : {{reference_externe}}\n\nÀ l\'attention de {{expediteur}},\n\nEn réponse à votre courrier visé en objet, nous avons l\'honneur de vous informer ce qui suit :\n\n....................................................................\n....................................................................\n\nNous restons à votre disposition pour tout renseignement complémentaire.\n\nVeuillez agréer, {{expediteur}}, l\'expression de nos salutations distinguées.\n\nSGEC', 2, 1, NULL, '2026-10-01 09:36:43', '2026-10-01 09:36:43'),
 	(6, 'Relance — dossier en retard', 'Relance — {{objet}}', 'Kinshasa, le {{date_du_jour}}\n\nObjet : Relance — traitement du dossier « {{objet}} »\n\nÀ l\'attention de {{destinataire}},\n\nNous nous permettons d\'attirer votre attention sur le dossier référencé « {{numero}} », dont le délai de traitement était fixé au {{date_limite}}.\n\nÀ ce jour, nous n\'avons pas encore enregistré sa clôture. Nous vous prions de bien vouloir procéder au traitement ou de nous indiquer les raisons du retard.\n\nNous vous remercions de votre diligence.\n\nSGEC', NULL, 1, NULL, '2026-10-01 09:36:43', '2026-10-01 09:36:43'),
-	(7, 'Invitation / Convocation', 'Convocation — {{objet}}', 'Kinshasa, le {{date_du_jour}}\n\nObjet : Convocation — {{objet}}\n\nÀ l\'attention de {{destinataire}},\n\nVous êtes invité(e) à prendre part à une réunion portant sur le dossier « {{numero}} » :\n\n• Date : ...................................\n• Heure : ...................................\n• Lieu : ...................................\n\nVotre présence est vivement souhaitée. En cas d\'empêchement, veuillez désigner un représentant.\n\nSGEC', 3, 1, NULL, '2026-10-01 09:36:43', '2026-10-01 09:36:43');
+	(7, 'Invitation / Convocation', 'Convocation — {{objet}}', 'Kinshasa, le {{date_du_jour}}\n\nObjet : Convocation — {{objet}}\n\nÀ l\'attention de {{destinataire}},\n\nVous êtes invité(e) à prendre part à une réunion portant sur le dossier « {{numero}} » :\n\n• Date : ...................................\n• Heure : ...................................\n• Lieu : ...................................\n\nVotre présence est vivement souhaitée. En cas d\'empêchement, veuillez désigner un représentant.\n\nSGEC', NULL, 1, NULL, '2026-10-01 09:36:43', '2026-10-01 09:36:43');
 
 -- Listage de la structure de table gs_courrier. migrations
 CREATE TABLE IF NOT EXISTS `migrations` (
@@ -703,7 +735,7 @@ CREATE TABLE IF NOT EXISTS `migrations` (
   `migration` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `batch` int NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Listage des données de la table gs_courrier.migrations : ~0 rows (environ)
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
@@ -739,7 +771,8 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 	(30, '2026_10_03_000001_create_projets_lettres_table', 4),
 	(31, '2026_10_03_000002_create_versions_projets_lettres_table', 4),
 	(32, '2026_10_03_000003_create_validations_projets_lettres_table', 4),
-	(33, '2026_10_03_000004_create_historique_projets_lettres_table', 4);
+	(33, '2026_10_03_000004_create_historique_projets_lettres_table', 4),
+	(34, '2026_10_05_000000_add_date_accuse_reception_to_courrier_affectations_table', 5);
 
 -- Listage de la structure de table gs_courrier. parametres_generaux
 CREATE TABLE IF NOT EXISTS `parametres_generaux` (
@@ -792,9 +825,9 @@ CREATE TABLE IF NOT EXISTS `permissions` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `permissions_nom_unique` (`nom`),
   UNIQUE KEY `permissions_slug_unique` (`slug`)
-) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Listage des données de la table gs_courrier.permissions : ~24 rows (environ)
+-- Listage des données de la table gs_courrier.permissions : ~33 rows (environ)
 INSERT INTO `permissions` (`id`, `nom`, `slug`, `description`, `created_at`, `updated_at`) VALUES
 	(1, 'Voir les utilisateurs', 'users.view', 'Consulter la liste des utilisateurs', '2026-09-30 19:41:18', '2026-09-30 19:41:18'),
 	(2, 'Créer un utilisateur', 'users.create', 'Ajouter un nouvel utilisateur', '2026-09-30 19:41:18', '2026-09-30 19:41:18'),
@@ -828,7 +861,8 @@ INSERT INTO `permissions` (`id`, `nom`, `slug`, `description`, `created_at`, `up
 	(30, 'Créer un projet de lettre', 'projets.create', 'Créer un projet de lettre', '2026-10-01 15:38:43', '2026-10-01 15:38:43'),
 	(31, 'Modifier un projet de lettre', 'projets.update', 'Modifier, générer, importer et soumettre un projet de lettre', '2026-10-01 15:38:43', '2026-10-01 15:38:43'),
 	(32, 'Valider un projet de lettre', 'projets.valider', 'Approuver, demander correction ou rejeter un projet', '2026-10-01 15:38:43', '2026-10-01 15:38:43'),
-	(33, 'Signer un projet de lettre', 'projets.signer', 'Signer un projet de lettre validé', '2026-10-01 15:38:43', '2026-10-01 15:38:43');
+	(33, 'Signer un projet de lettre', 'projets.signer', 'Signer un projet de lettre validé', '2026-10-01 15:38:43', '2026-10-01 15:38:43'),
+	(34, 'Annuler un courrier', 'courriers.annuler', 'Annuler un courrier (permission dédiée)', '2026-10-02 11:09:43', '2026-10-02 11:09:43');
 
 -- Listage de la structure de table gs_courrier. personal_access_tokens
 CREATE TABLE IF NOT EXISTS `personal_access_tokens` (
@@ -845,14 +879,20 @@ CREATE TABLE IF NOT EXISTS `personal_access_tokens` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `personal_access_tokens_token_unique` (`token`),
   KEY `personal_access_tokens_tokenable_type_tokenable_id_index` (`tokenable_type`,`tokenable_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Listage des données de la table gs_courrier.personal_access_tokens : ~3 rows (environ)
+-- Listage des données de la table gs_courrier.personal_access_tokens : ~4 rows (environ)
 INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `name`, `token`, `abilities`, `last_used_at`, `expires_at`, `created_at`, `updated_at`) VALUES
 	(1, 'App\\Models\\User', 1, 'sgec-token', '0195e1f35979d735c2c216fe01227188c0cb58baf6eeccca10ae554bc889adfc', '["*"]', '2026-09-30 20:00:19', NULL, '2026-09-30 19:42:08', '2026-09-30 20:00:19'),
 	(2, 'App\\Models\\User', 1, 'sgec-token', 'ca0a1f7610434584501bcd9607284567346facd216e998143f23c46503122deb', '["*"]', '2026-09-30 20:20:53', NULL, '2026-09-30 20:02:53', '2026-09-30 20:20:53'),
-	(11, 'App\\Models\\User', 4, 'sgec-token', '28b41ad7cc373cf113f6ea48703ad0b44d70241ead1365e21bc7e9728890a4f9', '["*"]', '2026-10-01 17:11:11', NULL, '2026-10-01 08:27:49', '2026-10-01 17:11:11'),
-	(17, 'App\\Models\\User', 1, 'sgec-token', '81c1a860d3ef2f363a5dd4e5ed8002d65fc3c867b2ec478aa0c3f82201898bb4', '["*"]', '2026-10-01 17:30:41', NULL, '2026-10-01 09:33:38', '2026-10-01 17:30:41');
+	(11, 'App\\Models\\User', 4, 'sgec-token', '28b41ad7cc373cf113f6ea48703ad0b44d70241ead1365e21bc7e9728890a4f9', '["*"]', '2026-10-01 17:59:32', NULL, '2026-10-01 08:27:49', '2026-10-01 17:59:32'),
+	(17, 'App\\Models\\User', 1, 'sgec-token', '81c1a860d3ef2f363a5dd4e5ed8002d65fc3c867b2ec478aa0c3f82201898bb4', '["*"]', '2026-10-01 17:59:32', NULL, '2026-10-01 09:33:38', '2026-10-01 17:59:32'),
+	(22, 'App\\Models\\User', 1, 'sgec-token', '60952ba7b5697158af384f0d3f33a878ed71bbf3373df3970300d8134f71f174', '["*"]', NULL, NULL, '2026-10-02 15:14:56', '2026-10-02 15:14:56'),
+	(24, 'App\\Models\\User', 1, 'sgec-token', '990f5b447cc9eb51386f40abdb241a867f5ac77a37831ec68c354e0e9cee45a1', '["*"]', NULL, NULL, '2026-10-02 15:30:41', '2026-10-02 15:30:41'),
+	(25, 'App\\Models\\User', 1, 'sgec-token', '2349b33adfe521b6ac5a3ad81b66ecc00a6a07f7e1dc926d91712c3fb374b318', '["*"]', NULL, NULL, '2026-10-02 15:30:48', '2026-10-02 15:30:48'),
+	(26, 'App\\Models\\User', 1, 'sgec-token', '778fc62e7667ef6bf09dafff918f0318ff379ff91140cf10dc0b1aa8c83ae190', '["*"]', NULL, NULL, '2026-10-02 15:30:52', '2026-10-02 15:30:52'),
+	(28, 'App\\Models\\User', 1, 'sgec-token', '529e7dbf2b149c0d63d5a8a1457d4bd90397a2bcc9c8ae72f63a08c7f76cc59f', '["*"]', '2026-10-02 15:49:28', NULL, '2026-10-02 15:31:10', '2026-10-02 15:49:28'),
+	(32, 'App\\Models\\User', 1, 'sgec-token', 'febadfee53f0daa1b7bb3b00cfe25d2ff3bc254f49da3fd12c75eca8d451e2a8', '["*"]', '2026-10-02 18:12:42', NULL, '2026-10-02 18:11:03', '2026-10-02 18:12:42');
 
 -- Listage de la structure de table gs_courrier. priorites
 CREATE TABLE IF NOT EXISTS `priorites` (
@@ -942,7 +982,7 @@ CREATE TABLE IF NOT EXISTS `role_permissions` (
   CONSTRAINT `role_permissions_role_id_foreign` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Listage des données de la table gs_courrier.role_permissions : ~43 rows (environ)
+-- Listage des données de la table gs_courrier.role_permissions : ~68 rows (environ)
 INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 	(1, 1),
 	(2, 1),
@@ -1011,7 +1051,9 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`) VALUES
 	(2, 32),
 	(3, 32),
 	(1, 33),
-	(2, 33);
+	(2, 33),
+	(1, 34),
+	(2, 34);
 
 -- Listage de la structure de table gs_courrier. services
 CREATE TABLE IF NOT EXISTS `services` (
@@ -1063,7 +1105,7 @@ CREATE TABLE IF NOT EXISTS `statut_courriers` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `statut_courriers_code_unique` (`code`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Listage des données de la table gs_courrier.statut_courriers : ~8 rows (environ)
 INSERT INTO `statut_courriers` (`id`, `code`, `libelle`, `description`, `created_at`, `updated_at`) VALUES
@@ -1074,7 +1116,8 @@ INSERT INTO `statut_courriers` (`id`, `code`, `libelle`, `description`, `created
 	(5, 'VALIDE', 'Validé', 'Courrier validé', '2026-09-30 19:41:20', '2026-09-30 19:41:20'),
 	(6, 'CLOTURE', 'Clôturé', 'Courrier clôturé', '2026-09-30 19:41:20', '2026-09-30 19:41:20'),
 	(7, 'REJETE', 'Rejeté', 'Courrier rejeté', '2026-09-30 19:41:20', '2026-09-30 19:41:20'),
-	(8, 'ARCHIVE', 'Archivé', 'Courrier archivé', '2026-09-30 19:41:20', '2026-09-30 19:41:20');
+	(8, 'ARCHIVE', 'Archivé', 'Courrier archivé', '2026-09-30 19:41:20', '2026-09-30 19:41:20'),
+	(10, 'ANNULE', 'Annulé', 'Courrier annulé', '2026-10-02 11:09:41', '2026-10-02 11:09:41');
 
 -- Listage de la structure de table gs_courrier. type_courriers
 CREATE TABLE IF NOT EXISTS `type_courriers` (
@@ -1085,13 +1128,14 @@ CREATE TABLE IF NOT EXISTS `type_courriers` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `type_courriers_code_unique` (`code`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Listage des données de la table gs_courrier.type_courriers : ~3 rows (environ)
+-- Listage des données de la table gs_courrier.type_courriers : ~5 rows (environ)
 INSERT INTO `type_courriers` (`id`, `code`, `libelle`, `created_at`, `updated_at`) VALUES
-	(1, 'ENTRANT', 'Courrier entrant', '2026-09-30 19:41:20', '2026-09-30 19:41:20'),
-	(2, 'SORTANT', 'Courrier sortant', '2026-09-30 19:41:20', '2026-09-30 19:41:20'),
-	(3, 'INTERNE', 'Courrier interne', '2026-09-30 19:41:20', '2026-09-30 19:41:20');
+	(1, 'ENTRANT', 'Courrier externe entrant', '2026-09-30 19:41:20', '2026-10-02 11:00:19'),
+	(2, 'SORTANT', 'Courrier externe sortant', '2026-09-30 19:41:20', '2026-10-02 11:00:19'),
+	(5, 'INT_ENTRANT', 'Courrier interne entrant', '2026-10-02 11:00:19', '2026-10-02 11:00:19'),
+	(6, 'INT_SORTANT', 'Courrier interne sortant', '2026-10-02 11:00:19', '2026-10-02 11:00:19');
 
 -- Listage de la structure de table gs_courrier. users
 CREATE TABLE IF NOT EXISTS `users` (
@@ -1119,7 +1163,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 
 -- Listage des données de la table gs_courrier.users : ~3 rows (environ)
 INSERT INTO `users` (`id`, `name`, `email`, `password`, `actif`, `direction_id`, `departement_id`, `service_id`, `email_verified_at`, `remember_token`, `created_at`, `updated_at`) VALUES
-	(1, 'Pierre Papy', 'pierrepapy@gmail.com', '$2y$12$OzhPg29V07TjzCzkV0VYc.BnEDHTMevsBaX7.j.7lt/oTj/6gJ0L.', 1, NULL, NULL, NULL, '2026-09-30 19:41:19', NULL, '2026-09-30 19:41:19', '2026-09-30 19:41:19'),
+	(1, 'Pierre Papy', 'pierrepapy@gmail.com', '$2y$12$OzhPg29V07TjzCzkV0VYc.BnEDHTMevsBaX7.j.7lt/oTj/6gJ0L.', 1, 2, NULL, NULL, '2026-09-30 19:41:19', NULL, '2026-09-30 19:41:19', '2026-10-02 14:58:42'),
 	(2, 'Robby Mukendi', 'directeur@sgec.cd', '$2y$12$WcpCU5kivmYpN5mzU0KQ0ewjIXgUqBo8pzy26KSLM2u85CRBOOPvi', 1, NULL, NULL, NULL, '2026-09-30 19:41:19', NULL, '2026-09-30 19:41:19', '2026-09-30 19:41:19'),
 	(3, 'Agent Courrier', 'agent@sgec.cd', '$2y$12$npjBHi0cQ/RtiBOiUTm4R.L4hzPku6sWxieyZ8vpAreKkNZ5hMugS', 1, NULL, NULL, NULL, '2026-09-30 19:41:19', NULL, '2026-09-30 19:41:19', '2026-09-30 19:41:19'),
 	(4, 'SALAMA NGOY', 'salama@gmail.com', '$2y$12$Kl3vFzr/V6ZJA8jGVVHwjeyHep2.lAvP8oXsCfB/ybit7cAfOU0K2', 1, 3, 5, 8, NULL, NULL, '2026-10-01 07:41:05', '2026-10-01 07:41:05');

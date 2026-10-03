@@ -7,6 +7,7 @@ use App\Helpers\AuditLogger;
 use App\Models\Courrier;
 use App\Models\CourrierAffectation;
 use App\Models\StatutCourrier;
+use App\Models\User;
 use App\Services\CircuitService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -22,7 +23,8 @@ class CourrierAffectationController extends Controller
             $user = auth()->user();
 
             $query = CourrierAffectation::with([
-                'courrier', 'direction', 'departement', 'service',
+                'courrier' => fn ($q) => $q->select(Courrier::LIST_SELECT),
+                'direction', 'departement', 'service',
                 'user', 'affectePar',
             ])->whereHas('courrier', function ($q) use ($user) {
                 $q->visiblePour($user)->visibleConfidentialite($user);
@@ -40,8 +42,14 @@ class CourrierAffectationController extends Controller
                 $query->where('statut', $request->statut);
             }
 
+            $affectations = $query->orderByDesc('date_affectation')->paginate($request->get('per_page', 15));
+
+            foreach ($affectations->items() as $affectation) {
+                $affectation->peut_actionner = $this->peutActionner($affectation, $user);
+            }
+
             return $this->success(
-                $query->orderByDesc('date_affectation')->paginate($request->get('per_page', 15)),
+                $affectations,
                 'Liste des affectations'
             );
         } catch (\Throwable $e) {
@@ -133,8 +141,28 @@ class CourrierAffectationController extends Controller
     public function update(Request $request, CourrierAffectation $affectation)
     {
         try {
-            if (! $affectation->courrier?->estVisiblePar($request->user())) {
+            $user = $request->user();
+
+            if (! $affectation->courrier?->estVisiblePar($user)) {
                 return $this->error('Accès refusé à cette affectation.', null, 403);
+            }
+
+            $modifieCible = $request->has('direction_id')
+                || $request->has('departement_id')
+                || $request->has('service_id')
+                || $request->has('user_id')
+                || $request->has('date_limite');
+            $modifieStatut = $request->has('statut');
+
+            // Réaffectation (modifier la cible) : réservée au dispatching (courriers.affecter).
+            if ($modifieCible && ! $user->hasPermission('courriers.affecter')) {
+                return $this->error('Vous n\'avez pas le droit de réaffecter ce courrier.', null, 403);
+            }
+
+            // Faire évoluer le workflow (prendre en charge, traiter, rejeter) :
+            // réservé au service destinataire — jamais à l'émetteur.
+            if ($modifieStatut && ! $this->peutActionner($affectation, $user)) {
+                return $this->error('Seul le service destinataire de cette affectation peut la faire évoluer.', null, 403);
             }
 
             $validated = $request->validate([
@@ -205,8 +233,15 @@ class CourrierAffectationController extends Controller
     public function accuserReception(Request $request, CourrierAffectation $affectation)
     {
         try {
-            if (! $affectation->courrier?->estVisiblePar($request->user())) {
+            $user = $request->user();
+
+            if (! $affectation->courrier?->estVisiblePar($user)) {
                 return $this->error('Accès refusé à cette affectation.', null, 403);
+            }
+
+            // Seul le service destinataire accuse la réception — jamais l'émetteur.
+            if (! $this->peutActionner($affectation, $user)) {
+                return $this->error('Seul le service destinataire de cette affectation peut accuser la réception.', null, 403);
             }
 
             if ($affectation->date_accuse_reception) {
@@ -261,5 +296,27 @@ class CourrierAffectationController extends Controller
         } catch (\Throwable $e) {
             return $this->error('Erreur lors de la suppression', $e->getMessage(), 500);
         }
+    }
+
+    /**
+     * L'utilisateur appartient-il à l'unité destinataire de cette affectation
+     * (direction / département / service concernés, ou affectation nominative à lui) ?
+     */
+    private function estDestinataire(CourrierAffectation $affectation, User $user): bool
+    {
+        return ($affectation->user_id && (int) $affectation->user_id === (int) $user->id)
+            || ($affectation->direction_id && $user->direction_id && (int) $affectation->direction_id === (int) $user->direction_id)
+            || ($affectation->departement_id && $user->departement_id && (int) $affectation->departement_id === (int) $user->departement_id)
+            || ($affectation->service_id && $user->service_id && (int) $affectation->service_id === (int) $user->service_id);
+    }
+
+    /**
+     * Le service destinataire peut « actionner » le workflow (accuser réception,
+     * prendre en charge, traiter, rejeter). L'émetteur de l'affectation ne peut jamais.
+     */
+    private function peutActionner(CourrierAffectation $affectation, User $user): bool
+    {
+        return $this->estDestinataire($affectation, $user)
+            && (int) ($affectation->affecte_par ?? 0) !== (int) $user->id;
     }
 }

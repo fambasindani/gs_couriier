@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Field, Input, Select } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Pagination } from '@/components/ui/Pagination'
 import { TableBodySkeleton } from '@/components/ui/Skeletons'
@@ -480,27 +481,20 @@ export function UtilisateursPage() {
         </div>
       </Modal>
 
-      <Modal
+      <ConfirmDialog
         open={Boolean(deleteTarget)}
-        title="Supprimer l’utilisateur"
-        size="sm"
-        onClose={() => setDeleteTarget(null)}
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              Annuler
-            </Button>
-            <Button variant="danger" onClick={handleDelete}>
-              Supprimer
-            </Button>
-          </>
+        title="Supprimer l'utilisateur"
+        tone="danger"
+        confirmLabel="Supprimer"
+        message={
+          <p>
+            Confirmez-vous la suppression de{' '}
+            <span className="font-semibold text-ink">{deleteTarget?.name}</span> ?
+          </p>
         }
-      >
-        <p className="text-[0.85rem] text-slate-600">
-          Confirmez-vous la suppression de{' '}
-          <span className="font-semibold text-ink">{deleteTarget?.name}</span> ?
-        </p>
-      </Modal>
+        onConfirm={handleDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

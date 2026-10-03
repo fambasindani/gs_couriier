@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { AlertTriangle, ArrowRight, Ban, CheckCheck, Pencil, Plus, Share2, Trash2 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
@@ -125,9 +125,7 @@ export function AffectationsPage() {
       .list(params)
       .then((res) => {
         if (active) {
-          setData((prev) =>
-            JSON.stringify(prev) === JSON.stringify(res.data) ? prev : res.data,
-          )
+          setData(res.data)
           setError(null)
         }
       })
@@ -144,18 +142,18 @@ export function AffectationsPage() {
 
   // Rafraîchissement automatique : l'accusé de réception devient visible en temps réel
   useEffect(() => {
-    const timer = setInterval(() => { if (document.visibilityState === 'visible') setReloadKey((value) => value + 1) }, 60000)
+    const timer = setInterval(() => { if (document.visibilityState === 'visible') setReloadKey((value) => value + 1) }, 120000)
     return () => clearInterval(timer)
   }, [])
 
   const refresh = () => setReloadKey((value) => value + 1)
 
-  const openCreate = () => {
+  const openCreate = useCallback(() => {
     setEditing(null)
     setForm(EMPTY_FORM)
     setFormError(null)
     setFormOpen(true)
-  }
+  }, [])
 
   // Pré-remplissage depuis /traitement/affectations?courrier_id=X (point d'encodage)
   useEffect(() => {
@@ -234,7 +232,7 @@ export function AffectationsPage() {
     setSaving(true)
     try {
       if (editing) {
-        await affectationsService.update(editing.id, { ...payload, statut: form.statut })
+        await affectationsService.update(editing.id, payload)
       } else {
         await affectationsService.create({ courrier_id: form.courrier!.id, ...payload })
       }
@@ -382,7 +380,7 @@ export function AffectationsPage() {
                     </td>
                     <td className="text-right">
                       <div className="inline-flex gap-1.5">
-                        {canManage && !item.date_accuse_reception && (
+                        {item.peut_actionner === true && !item.date_accuse_reception && (
                           <button
                             onClick={() => void handleAccuser(item)}
                             className="rounded-md border border-line bg-white p-1.5 text-success hover:bg-success/5"
@@ -391,7 +389,7 @@ export function AffectationsPage() {
                             <CheckCheck className="h-4 w-4" />
                           </button>
                         )}
-                        {canManage && item.statut === 'AFFECTE' && (
+                        {item.peut_actionner === true && item.statut === 'AFFECTE' && (
                           <button
                             onClick={() =>
                               setPendingAction({ item, statut: 'PRIS_EN_CHARGE', label: 'Prendre en charge' })
@@ -402,7 +400,7 @@ export function AffectationsPage() {
                             <ArrowRight className="h-4 w-4" />
                           </button>
                         )}
-                        {canManage && item.statut !== 'TRAITE' && item.statut !== 'REJETE' && (
+                        {item.peut_actionner === true && item.statut !== 'TRAITE' && item.statut !== 'REJETE' && (
                           <button
                             onClick={() =>
                               setPendingAction({ item, statut: 'TRAITE', label: 'Marquer comme traité' })
@@ -413,7 +411,7 @@ export function AffectationsPage() {
                             <CheckCheck className="h-4 w-4" />
                           </button>
                         )}
-                        {canManage && item.statut !== 'REJETE' && item.statut !== 'TRAITE' && (
+                        {item.peut_actionner === true && item.statut !== 'REJETE' && item.statut !== 'TRAITE' && (
                           <button
                             onClick={() => setPendingAction({ item, statut: 'REJETE', label: 'Rejeter' })}
                             className="rounded-md border border-line bg-white p-1.5 text-danger hover:bg-danger/5"
@@ -543,17 +541,6 @@ export function AffectationsPage() {
                 onChange={(e) => set('date_limite', e.target.value)}
               />
             </Field>
-            {editing && (
-              <Field label="Statut">
-                <Select value={form.statut} onChange={(e) => set('statut', e.target.value)}>
-                  {STATUTS.map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-            )}
           </div>
         </div>
       </Modal>

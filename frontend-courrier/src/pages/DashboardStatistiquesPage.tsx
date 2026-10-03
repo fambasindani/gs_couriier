@@ -164,7 +164,7 @@ export function DashboardStatistiquesPage() {
             />
             <StatCard
               title="Délai Moyen de Traitement"
-              value={`${data?.delai_moyen_traitement_jours ?? 0} j`}
+              value={`${Math.round(data?.delai_moyen_traitement_jours ?? 0)} j`}
               tone="info"
               icon={<Clock className="h-6 w-6" />}
               hint={

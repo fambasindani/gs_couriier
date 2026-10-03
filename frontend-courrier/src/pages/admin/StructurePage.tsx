@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Field, Input, Select, Textarea } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { TableBodySkeleton } from '@/components/ui/Skeletons'
 import { structureService } from '@/services/admin.service'
@@ -104,7 +105,7 @@ export function StructurePage() {
     setForm({
       code: item.code ?? '',
       libelle: item.libelle,
-      description: '',
+      description: item.description ?? '',
       direction_id: String(item.direction_id ?? ''),
       departement_id: String(item.departement_id ?? ''),
     })
@@ -362,27 +363,21 @@ export function StructurePage() {
         </div>
       </Modal>
 
-      <Modal
+      <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Supprimer"
-        size="sm"
-        onClose={() => setDeleteTarget(null)}
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              Annuler
-            </Button>
-            <Button variant="danger" onClick={handleDelete}>
-              Supprimer
-            </Button>
-          </>
+        tone="danger"
+        confirmLabel="Supprimer"
+        message={
+          <p>
+            Supprimer{' '}
+            <span className="font-semibold text-ink">{deleteTarget?.item.libelle}</span> ? Les
+            éléments enfants pourraient être affectés.
+          </p>
         }
-      >
-        <p className="text-[0.85rem] text-slate-600">
-          Supprimer <span className="font-semibold text-ink">{deleteTarget?.item.libelle}</span> ? Les
-          éléments enfants pourraient être affectés.
-        </p>
-      </Modal>
+        onConfirm={handleDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

@@ -27,7 +27,8 @@ class RoleSeeder extends Seeder
                 'users.view',
                 'courriers.view', 'courriers.create', 'courriers.update',
                 'courriers.affecter', 'courriers.annoter', 'courriers.valider', 'courriers.annuler',
-                'courriers.view.all', 'courriers.confidentiel.view', 'courriers.tres_confidentiel.view',
+                // NB : pas de 'courriers.view.all' — le Directeur ne voit que sa propre direction.
+                'courriers.confidentiel.view', 'courriers.tres_confidentiel.view',
                 'projets.view', 'projets.create', 'projets.update', 'projets.valider', 'projets.signer',
                 'structure.view',
                 'audit.view',

@@ -36,7 +36,7 @@ class CircuitService
     public static function getCircuit(Courrier $courrier): array
     {
         $historiques = $courrier->historiques()
-            ->with('user')
+            ->with('user.direction')
             ->orderBy('created_at')
             ->get();
 
@@ -58,6 +58,7 @@ class CircuitService
                         'id' => $h->user->id,
                         'name' => $h->user->name,
                     ] : null,
+                    'direction' => $h->user?->direction?->libelle,
                     'date' => $h->created_at,
                     'adresse_ip' => $h->adresse_ip,
                 ];
@@ -72,7 +73,7 @@ class CircuitService
     public static function getEtapeActuelle(Courrier $courrier): ?array
     {
         $dernier = $courrier->historiques()
-            ->with('user')
+            ->with('user.direction')
             ->orderByDesc('created_at')
             ->first();
 
@@ -85,6 +86,7 @@ class CircuitService
             'etape' => $dernier->etape,
             'description' => $dernier->description,
             'user' => $dernier->user?->name,
+            'direction' => $dernier->user?->direction?->libelle,
             'date' => $dernier->created_at,
         ];
     }

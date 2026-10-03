@@ -395,10 +395,11 @@ class RapportController extends Controller
     }
 
     /**
-     * IDs des courriers visibles par l'utilisateur (périmètre + confidentialité).
+     * Sous-requête des courriers visibles par l'utilisateur (périmètre + confidentialité).
+     * Retourne un Builder pour un WHERE IN sous-requête, évitant de matérialiser tous les IDs en PHP.
      */
     private function visibleCourrierIds($user)
     {
-        return Courrier::visiblePour($user)->visibleConfidentialite($user)->pluck('id');
+        return Courrier::visiblePour($user)->visibleConfidentialite($user)->select('id');
     }
 }

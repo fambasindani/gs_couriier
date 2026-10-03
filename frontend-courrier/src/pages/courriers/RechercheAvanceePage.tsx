@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Eye, RotateCcw, Search } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -11,7 +11,7 @@ import { Pagination } from '@/components/ui/Pagination'
 import { TableBodySkeleton } from '@/components/ui/Skeletons'
 import { courriersService, type RechercheParams } from '@/services/courriers.service'
 import { useReferentiels } from '@/hooks/useReferentiels'
-import { formatDate } from '@/lib/utils'
+import { formatDate, typeCourrierLibelle } from '@/lib/utils'
 import type { Courrier, Paginated } from '@/types'
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
@@ -31,8 +31,9 @@ const SORT_OPTIONS = [
 
 export function RechercheAvanceePage() {
   const referentiels = useReferentiels()
+  const [searchParams] = useSearchParams()
 
-  const [q, setQ] = useState('')
+  const [q, setQ] = useState(searchParams.get('q') ?? '')
   const [typeId, setTypeId] = useState('')
   const [categorieId, setCategorieId] = useState('')
   const [prioriteId, setPrioriteId] = useState('')
@@ -394,7 +395,7 @@ export function RechercheAvanceePage() {
                         {courrier.numero}
                       </Link>
                     </td>
-                    <td className="text-slate-500">                {courrier.type_courrier?.libelle ?? '—'}</td>
+                    <td className="text-slate-500">                {typeCourrierLibelle(courrier)}</td>
                     <td className="max-w-[260px]">{courrier.objet}</td>
                     <td>{courrier.expediteur?.nom ?? '—'}</td>
                     <td>{formatDate(courrier.date_reception)}</td>

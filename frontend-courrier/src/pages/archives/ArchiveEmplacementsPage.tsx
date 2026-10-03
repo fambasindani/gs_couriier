@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Field, Input, Textarea } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { TableBodySkeleton } from '@/components/ui/Skeletons'
 import { archiveEmplacementsService } from '@/services/archives.service'
@@ -269,27 +270,20 @@ export function ArchiveEmplacementsPage() {
         </div>
       </Modal>
 
-      <Modal
+      <ConfirmDialog
         open={Boolean(deleteTarget)}
-        title="Supprimer l’emplacement"
-        size="sm"
-        onClose={() => setDeleteTarget(null)}
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              Annuler
-            </Button>
-            <Button variant="danger" onClick={handleDelete}>
-              Supprimer
-            </Button>
-          </>
+        title="Supprimer l'emplacement"
+        tone="danger"
+        confirmLabel="Supprimer"
+        message={
+          <p>
+            Confirmez-vous la suppression de «{' '}
+            <span className="font-semibold text-ink">{deleteTarget?.intitule}</span> » ?
+          </p>
         }
-      >
-        <p className="text-[0.85rem] text-slate-600">
-          Confirmez-vous la suppression de «{' '}
-          <span className="font-semibold text-ink">{deleteTarget?.intitule}</span> » ?
-        </p>
-      </Modal>
+        onConfirm={handleDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

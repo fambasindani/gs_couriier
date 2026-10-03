@@ -71,8 +71,4 @@ export const circuitService = {
     http.get<ApiEnvelope<CircuitData>>(`/courriers/${courrierId}/circuit`),
   etapeActuelle: (courrierId: number | string) =>
     http.get<ApiEnvelope<EtapeActuelle | null>>(`/courriers/${courrierId}/etape-actuelle`),
-  timeline: (courrierId: number | string) =>
-    http.get<ApiEnvelope<{ courrier: { id: number; numero: string }; timeline: unknown[] }>>(
-      `/courriers/${courrierId}/timeline`,
-    ),
 }

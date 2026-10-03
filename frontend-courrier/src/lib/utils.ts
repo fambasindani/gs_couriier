@@ -38,6 +38,18 @@ export function toFixed1(value: unknown): number {
   return Math.round(toNumber(value) * 10) / 10
 }
 
+interface TypeCourrierView {
+  type_courrier?: { libelle?: string } | null
+  sens_pour_moi?: 'ENTRANT' | 'SORTANT' | string | null
+}
+
+/** Libellé du type selon le point de vue : Entrant/Sortant pour les courriers internes. */
+export function typeCourrierLibelle(c: TypeCourrierView): string {
+  if (c.sens_pour_moi === 'ENTRANT') return 'Entrant'
+  if (c.sens_pour_moi === 'SORTANT') return 'Sortant'
+  return c.type_courrier?.libelle ?? '—'
+}
+
 /** Initiales à partir d'un nom complet. */
 export function initials(name?: string | null): string {
   if (!name) return '?'

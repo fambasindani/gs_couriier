@@ -3,8 +3,8 @@ import type {
   ApiEnvelope,
   Courrier,
   CourrierDetail,
+  CourrierLie,
   CourrierLies,
-  CourrierStats,
   CourrierTimeline,
   LettreGeneree,
   Paginated,
@@ -19,6 +19,7 @@ export interface CourrierListParams extends Query {
   priorite_id?: number | string
   statut_id?: number | string
   confidentialite?: string
+  created_by?: number | string
   date_debut?: string
   date_fin?: string
   per_page?: number
@@ -74,6 +75,8 @@ export interface ArchivePayload {
   archive_category_id?: number | null
   archive_emplacement_id?: number | null
   titre_dossier?: string
+  producteur_service?: string | null
+  date_periode?: string | null
   duree_conservation_ans?: number | null
   observation?: string | null
 }
@@ -99,10 +102,6 @@ export const courriersService = {
     return http.delete<ApiEnvelope<null>>(`/courriers/${id}`)
   },
 
-  stats() {
-    return http.get<ApiEnvelope<CourrierStats>>('/courriers/stats')
-  },
-
   enRetard(params: CourrierListParams = {}) {
     return http.get<ApiEnvelope<Paginated<Courrier>>>('/courriers/en-retard', { query: params })
   },
@@ -116,7 +115,7 @@ export const courriersService = {
   },
 
   lier(id: number | string, parentId: number | string) {
-    return http.post<ApiEnvelope<CourrierDetail>>(`/courriers/${id}/lier`, {
+    return http.post<ApiEnvelope<CourrierLie>>(`/courriers/${id}/lier`, {
       courrier_parent_id: parentId,
     })
   },

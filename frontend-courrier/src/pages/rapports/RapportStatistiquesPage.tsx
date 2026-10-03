@@ -175,14 +175,14 @@ export function RapportStatistiquesPage() {
             />
             <StatCard
               title="Délai moyen de traitement"
-              value={`${toFixed1(traitement?.delai_moyen_traitement_jours)} j`}
+              value={`${Math.round(traitement?.delai_moyen_traitement_jours ?? 0)} j`}
               tone="warning"
               icon={<Clock className="h-6 w-6" />}
               hint={<span className="text-slate-500">Réception → clôture</span>}
             />
             <StatCard
               title="Délai moyen d'affectation"
-              value={`${toFixed1(traitement?.delai_moyen_affectation_heures)} h`}
+              value={`${Math.round(traitement?.delai_moyen_affectation_heures ?? 0)} h`}
               tone="primary"
               icon={<Clock className="h-6 w-6" />}
               hint={<span className="text-slate-500">Réception → affectation</span>}

@@ -319,8 +319,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware('permission:courriers.update');
     Route::patch('/courriers/{courrier}', [CourrierController::class, 'update'])
         ->middleware('permission:courriers.update');
-    Route::delete('/courriers/{courrier}', [CourrierController::class, 'destroy'])
-        ->middleware('permission:courriers.delete');
+    Route::delete('/courriers/{courrier}', [CourrierController::class, 'destroy']);
 
     // =====================================================================
     // Module Courrier — Workflow
@@ -332,12 +331,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->middleware('permission:courriers.affecter');
     Route::get('/courrier-affectations/{affectation}', [CourrierAffectationController::class, 'show'])
         ->middleware('permission:courriers.view');
-    Route::put('/courrier-affectations/{affectation}', [CourrierAffectationController::class, 'update'])
-        ->middleware('permission:courriers.affecter');
+    Route::put('/courrier-affectations/{affectation}', [CourrierAffectationController::class, 'update']);
+    Route::patch('/courrier-affectations/{affectation}', [CourrierAffectationController::class, 'update']);
     Route::delete('/courrier-affectations/{affectation}', [CourrierAffectationController::class, 'destroy'])
         ->middleware('permission:courriers.affecter');
-    Route::post('/courrier-affectations/{affectation}/accuser-reception', [CourrierAffectationController::class, 'accuserReception'])
-        ->middleware('permission:courriers.affecter');
+    Route::post('/courrier-affectations/{affectation}/accuser-reception', [CourrierAffectationController::class, 'accuserReception']);
 
     // Annotations
     Route::get('/courrier-annotations', [CourrierAnnotationController::class, 'index'])

@@ -35,7 +35,6 @@ interface AuthState {
   fetchMe: () => Promise<void>
   setUser: (user: User) => void
   hasPermission: (slug: string) => boolean
-  isAdmin: () => boolean
   isAuthenticated: () => boolean
   clearError: () => void
 }
@@ -95,10 +94,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!user) return false
     if (user.roles?.some((role) => role.nom === ADMIN_ROLE)) return true
     return user.roles?.some((role) => role.permissions?.some((p) => p.slug === slug)) ?? false
-  },
-
-  isAdmin() {
-    return get().user?.roles?.some((role) => role.nom === ADMIN_ROLE) ?? false
   },
 
   isAuthenticated() {

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Field, Input, Textarea } from '@/components/ui/Field'
 import { Modal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { TableBodySkeleton } from '@/components/ui/Skeletons'
 import { CheckboxList } from '@/components/ui/CheckboxList'
@@ -451,49 +452,36 @@ export function RolesPermissionsPage() {
       </Modal>
 
       {/* Suppression rôle */}
-      <Modal
+      <ConfirmDialog
         open={Boolean(deleteRole)}
         title="Supprimer le rôle"
-        size="sm"
-        onClose={() => setDeleteRole(null)}
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setDeleteRole(null)}>
-              Annuler
-            </Button>
-            <Button variant="danger" onClick={handleDeleteRole}>
-              Supprimer
-            </Button>
-          </>
+        tone="danger"
+        confirmLabel="Supprimer"
+        message={
+          <p>
+            Supprimer le rôle <span className="font-semibold text-ink">{deleteRole?.nom}</span> ? Il
+            doit n'être attribué à aucun utilisateur.
+          </p>
         }
-      >
-        <p className="text-[0.85rem] text-slate-600">
-          Supprimer le rôle <span className="font-semibold text-ink">{deleteRole?.nom}</span> ? Il doit
-          n'être attribué à aucun utilisateur.
-        </p>
-      </Modal>
+        onConfirm={handleDeleteRole}
+        onClose={() => setDeleteRole(null)}
+      />
 
       {/* Suppression permission */}
-      <Modal
+      <ConfirmDialog
         open={Boolean(deletePerm)}
         title="Supprimer la permission"
-        size="sm"
-        onClose={() => setDeletePerm(null)}
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setDeletePerm(null)}>
-              Annuler
-            </Button>
-            <Button variant="danger" onClick={handleDeletePerm}>
-              Supprimer
-            </Button>
-          </>
+        tone="danger"
+        confirmLabel="Supprimer"
+        message={
+          <p>
+            Supprimer la permission <span className="font-semibold text-ink">{deletePerm?.slug}</span>
+            ?
+          </p>
         }
-      >
-        <p className="text-[0.85rem] text-slate-600">
-          Supprimer la permission <span className="font-semibold text-ink">{deletePerm?.slug}</span> ?
-        </p>
-      </Modal>
+        onConfirm={handleDeletePerm}
+        onClose={() => setDeletePerm(null)}
+      />
     </div>
   )
 }
